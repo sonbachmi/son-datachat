@@ -1,0 +1,9 @@
+#Code
+cache
+*.log
+
+#Private
+.env
+
+#IDE
+.idea
