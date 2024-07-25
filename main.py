@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from pandasai import SmartDataframe, Agent
+from pandasai import SmartDataframe, Agent, skill
 from pandasai.llm import OpenAI
 # from pandasai.helpers.openai_info import get_openai_callback
 
@@ -24,7 +24,6 @@ config = {
 #     print("Result", cb)
 
 def test_with_countries():
-    # Sample DataFrame
     sales_by_country = pd.DataFrame({
         "country": ["United States", "United Kingdom", "France", "Germany", "Italy", "Spain", "Canada", "Australia",
                     "Japan", "China"],
@@ -53,6 +52,22 @@ def test_with_countries():
 
 
 def test_with_employees():
+    @skill
+    def plot_salaries(names: list[str], salaries: list[int]):
+        """
+        Displays the bar chart  having name on x-axis and salaries on y-axis
+        Args:
+            names (list[str]): Employees' names
+            salaries (list[int]): Salaries
+        """
+        # plot bars
+        import matplotlib.pyplot as plt
+
+        plt.bar(names, salaries)
+        plt.xlabel("Employee Name")
+        plt.ylabel("Salary")
+        plt.title("Employee Salaries")
+        plt.xticks(rotation=45)
     employees_data = {
         "EmployeeID": [1, 2, 3, 4, 5],
         "Name": ["John", "Emma", "Liam", "Olivia", "William"],
@@ -67,9 +82,9 @@ def test_with_employees():
     employees_df = pd.DataFrame(employees_data)
     salaries_df = pd.DataFrame(salaries_data)
     agent = Agent([employees_df, salaries_df], config, memory_size=10)
-    # agent.add_skills(plot_salaries)
 
-    query = "Who gets paid the most?"
+    # query = "Who gets paid the most?"
+    query = "Plot the employee salaries against names"
 
     # Chat with the agent
     response = agent.chat(query)
@@ -86,4 +101,12 @@ def test_with_employees():
     print(response)
 
 
-test_with_employees()
+def test_with_titanic():
+    rows = 100
+    df = pd.read_excel("data/titanic.xlsx", nrows=rows)
+    agent = Agent(df, config)
+    response = agent.chat('How many survivors are there')
+    print(response)
+
+
+test_with_titanic()

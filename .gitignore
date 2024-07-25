@@ -1,9 +1,13 @@
-#Code
-cache
-*.log
+#Env
+.venv
 
 #Private
 .env
 
 #IDE
 .idea
+
+#PandasAi
+/cache
+*.log
+/exports
