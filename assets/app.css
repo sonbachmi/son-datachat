@@ -1,0 +1,12 @@
+.stChatMessage:has([data-testid="chatAvatarIcon-user"]) {
+    text-align: right;
+    justify-content: flex-end;
+}
+
+.stChatMessage [data-testid="chatAvatarIcon-user"] {
+    order: 1;
+}
+
+.stChatMessage img[src$=".gif"] {
+    width: 32px;
+}
