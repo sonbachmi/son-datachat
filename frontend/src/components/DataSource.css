@@ -1,0 +1,7 @@
+.DataSource {
+    width: 100%;
+    justify-content: space-between;
+    .fieldset {
+        width: 45%;
+    }
+}
