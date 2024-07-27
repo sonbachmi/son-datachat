@@ -1,0 +1,27 @@
+### GET request to FastAPI server
+GET http://localhost:8000
+
+### GET request to FastAPI server
+GET http://localhost:8000/items/1
+
+### Send a form with the text and file fields
+POST http://localhost:8000/files
+Content-Type: multipart/form-data; boundary=boundary
+
+#--WebAppBoundary
+#Content-Disposition: form-data; name="element-name"
+#Content-Type: text/plain
+#
+#Name
+--boundary
+Content-Disposition: form-data; name="files"; filename="data.csv"
+Content-Type: text/csv
+
+< ./data/titanic.csv
+--boundary
+Content-Disposition: form-data; name="files"; filename="data.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./data/titanic.xlsx
+--FileBoundary--
+--boundary--
