@@ -3,11 +3,6 @@ from enum import Enum
 from fastapi import FastAPI, UploadFile
 
 
-class ModelName(str, Enum):
-    bamboo = 'bamboo'
-    openai = 'openai'
-
-
 app = FastAPI()
 
 

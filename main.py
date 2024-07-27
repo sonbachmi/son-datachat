@@ -1,120 +1,95 @@
-import os
+import random
+import string
+from enum import Enum
+
 import pandas as pd
-
-from pandasai import SmartDataframe, Agent, skill
-from pandasai.helpers import get_openai_callback
-from pandasai.llm import OpenAI
-from pandasai.responses.streamlit_response import StreamlitResponse
-
 from dotenv import load_dotenv
+from pandasai import Agent
+from pandasai.llm import OpenAI, BambooLLM
+from pandasai.responses.streamlit_response import StreamlitResponse
 
 load_dotenv()
 
-os.environ['PANDASAI_API_KEY'] = os.getenv('PANDASAI_API_KEY')
 
-llm = OpenAI(streaming=True)
-config = {
-    'llm': llm,
-    # "verbose": True,
-    'response_parser': StreamlitResponse,
-}
+class ModelName(str, Enum):
+    bamboo = 'bamboo'
+    openai = 'openai'
 
 
-def test_with_countries():
-    sales_by_country = pd.DataFrame(
-        {
-            'country': [
-                'United States',
-                'United Kingdom',
-                'France',
-                'Germany',
-                'Italy',
-                'Spain',
-                'Canada',
-                'Australia',
-                'Japan',
-                'China',
-            ],
-            'sales': [5000, 3200, 2900, 4100, 2300, 2100, 2500, 2600, 4500, 7000],
-            'deals_opened': [142, 80, 70, 90, 60, 50, 40, 30, 110, 120],
-            'deals_closed': [120, 70, 60, 80, 50, 40, 30, 20, 100, 110],
+incId = 0
+
+
+def generate_token():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+
+
+class Session:
+    id: int = ++incId
+    token: str
+    model: ModelName = ModelName.openai
+    bambooLLM = BambooLLM()
+    openAiLLM = OpenAI()
+    use_streamlit = False
+    agent: Agent = None
+    datasets: list[pd.DataFrame] = []
+    df: pd.DataFrame = None
+
+    def __init__(self, use_streamlit=False):
+        self.use_streamlit = use_streamlit
+        self.token = generate_token()
+
+    def get_config(self):
+        return {
+            'llm': self.openAiLLM if self.model == ModelName.openai else self.bambooLLM,
+            'response_parser': StreamlitResponse if self.use_streamlit else None,
         }
-    )
-    agent = Agent(sales_by_country, config)
-    response = agent.chat('Which are the top 5 countries by sales?')
-    print(response)
+
+    def set_model(self, model: ModelName):
+        self.model = model
+
+    def set_data(self, dfs: list[pd.DataFrame]):
+        # df = pd.read_csv('data/titanic.csv', nrows=200)
+        if not len(dfs):
+            raise Exception('Setting empty data')
+        self.datasets = dfs
+        self.select_data(0)
+
+    def select_data(self, index: int):
+        if index >= len(self.datasets):
+            raise Exception('Selecting data out of range')
+        self.df = self.datasets[index]
+        self.agent = Agent(self.df, self.get_config(), memory_size=10)
+
+    def get_chat_response(self, query: str):
+        # with get_openai_callback() as cb:
+        #     response = agent.chat(query)
+        #     print("Result:", cb)
+        if not self.agent:
+            raise Exception('No agent initialized')
+        return self.agent.chat(query)
 
 
-def test_with_employees():
-    @skill
-    def plot_salaries(names: list[str], salaries: list[int]):
-        """
-        Displays the bar chart  having name on x-axis and salaries on y-axis
-        Args:
-            names (list[str]): Employees' names
-            salaries (list[int]): Salaries
-        """
-        # plot bars
-        import matplotlib.pyplot as plt
-
-        plt.bar(names, salaries)
-        plt.xlabel('Employee Name')
-        plt.ylabel('Salary')
-        plt.title('Employee Salaries')
-        plt.xticks(rotation=45)
-
-    employees_data = {
-        'EmployeeID': [1, 2, 3, 4, 5],
-        'Name': ['John', 'Emma', 'Liam', 'Olivia', 'William'],
-        'Department': ['HR', 'Sales', 'IT', 'Marketing', 'Finance'],
-    }
-
-    salaries_data = {
-        'EmployeeID': [1, 2, 3, 4, 5],
-        'Salary': [5000, 6000, 4500, 7000, 5500],
-    }
-
-    employees_df = pd.DataFrame(employees_data)
-    salaries_df = pd.DataFrame(salaries_data)
-    agent = Agent([employees_df, salaries_df], config, memory_size=10)
-
-    # query = "Who gets paid the most?"
-    query = 'Plot the employee salaries against names'
-
-    # Chat with the agent
-    response = agent.chat(query)
-    print(response)
-
-    # Get Clarification Questions
-    questions = agent.clarification_questions(query)
-
-    for question in questions:
-        print(question)
-
-    # Explain how the chat response is generated
-    response = agent.explain()
-    print(response)
+sessions: list[Session] = []
 
 
-def get_agent(_df):
-    df = pd.read_csv('data/titanic.csv', nrows=200)
-    return Agent(df, config, memory_size=10)
+def create_session(use_streamlit=False):
+    session = Session(use_streamlit)
+    sessions.append(session)
+    print('Session created', session.token)
+    return session.token
 
 
-def get_chat_response(agent, query):
-    # with get_openai_callback() as cb:
-    #     response = agent.chat(query)
-    #     print("Result:", cb)
-    response = agent.chat(query)
+def get_session_by_token(token: str):
+    session = next((s for s in sessions if s.token == token), None)
+    return session
+
+
+def set_data(dfs: list[pd.DataFrame], token: str):
+    session = get_session_by_token(token)
+    session.set_data(dfs)
+
+
+def get_chat_response(query: str, token: str):
+    session = get_session_by_token(token)
+    response = session.get_chat_response(query)
     return response
-
-
-def test_with_titanic():
-    rows = 100
-    df = pd.read_excel('data/titanic.xlsx', nrows=rows)
-    agent = Agent(df, config)
-    response = agent.chat('How many survivors are there')
-    print(response)
-
-
-# test_with_titanic()

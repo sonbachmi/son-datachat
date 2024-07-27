@@ -6,7 +6,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-from main import get_chat_response, get_agent
+from main import create_session, set_data, get_chat_response
 
 st.set_page_config(
     page_title="Son's CS App",
@@ -45,6 +45,12 @@ st.sidebar.markdown('# Settings 🎈')
 st.title("Son's CS App")
 
 llm = st.sidebar.selectbox('Use LLM', ['BambooLLM', 'OpenAI'], index=1)
+
+
+if 'token' not in st.session_state:
+    st.session_state.token = create_session(True)
+
+token = st.session_state.token
 
 
 @st.cache_data(hash_funcs={'io.BytesIO': lambda f: f.name + len(f.getvalue())})
@@ -100,11 +106,7 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
                 else f'Selected data contains first {nrows} rows only'
             )
             st.dataframe(df, hide_index=True)
-        st.session_state.agent = get_agent(df)
-
-if 'agent' not in st.session_state or num_files == 0:
-    st.session_state.agent = None
-agent = st.session_state.agent
+        set_data(df, token)
 
 
 def write_response(answer):
@@ -117,7 +119,7 @@ def write_response(answer):
 
 
 with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
-    if not agent:
+    if not num_files:
         st.warning('Please select data source first.')
     else:
         # st.subheader('Chat')
@@ -160,7 +162,7 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
                 messages.chat_message('user').markdown(query)
                 with messages.chat_message('assistant'):
                     st.image('assets/typing.gif')
-                response = get_chat_response(agent, query)
+                response = get_chat_response(query, token)
                 # Save query response to queue for processing at next rerun
                 st.session_state.last_answer = response
                 st.session_state.submitting = False
