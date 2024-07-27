@@ -28,7 +28,7 @@ class Session:
     token: str
     model: ModelName = ModelName.openai
     bambooLLM = BambooLLM()
-    openAiLLM = OpenAI()
+    openAiLLM = OpenAI(temperature=0)
     use_streamlit = False
     agent: Agent = None
     datasets: list[pd.DataFrame] = []
@@ -54,10 +54,11 @@ class Session:
         self.datasets = dfs
         self.select_data(0)
 
-    def select_data(self, index: int):
+    def select_data(self, index: int, head: int = None):
         if index >= len(self.datasets):
             raise Exception('Selecting data out of range')
-        self.df = self.datasets[index]
+        df = self.datasets[index]
+        self.df = df if not head else df.head(head)
         self.agent = Agent(self.df, self.get_config(), memory_size=10)
 
     def get_chat_response(self, query: str):
