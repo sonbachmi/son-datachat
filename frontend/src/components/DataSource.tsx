@@ -1,10 +1,10 @@
-import {FC, useState} from 'react'
+import {FC, FormEvent, useState} from 'react'
 
 import {Alert, Button, Fieldset, FileInput, Group, NumberInput, rem, Select, Stack} from '@mantine/core'
 import {IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
 
 import './DataSource.css'
-import {postData} from '../hooks/fetch.ts'
+import {postData, postFormData} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
 
 const icon = <IconFileTypeCsv style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
@@ -51,9 +51,7 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
             formData.append('files', file)
         }
         try {
-            const data = await postData<{ rows: number[] }>('/data/input', formData, {
-                useFormData: true
-            })
+            const data = await postFormData<{ rows: number[] }>('/data/input', formData)
             if (data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
             const upFiles = files.map(((file, index) => {
@@ -85,7 +83,8 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
         setHead(value)
         setDirty(true)
     }
-    const applySelection = async () => {
+    const applySelection = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
         if (index == null) return
         setDirty(false)
         const f = uploadedFiles[+index]
@@ -94,13 +93,12 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
             head: +head
         })
         try {
-            const data = await postData('/data/select', null, {
+            await postData('/data/select', null, {
                 params: {
                     index: index,
                     head: head
                 }
             })
-            console.log(data)
         } catch (error) {
             console.error(error)
         }
@@ -128,24 +126,26 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
                     <Alert variant="light" color="blue" title="Data input required" icon={<IconInfoCircle/>}>
                         Please upload data for selection
                     </Alert>
-                    : <Stack>
-                        <Select size="md"
-                                label="Select file"
-                                description="Only feed data from this file"
-                                leftSection={iconFile}
-                                data={uploadedFiles} value={index} onChange={onIndexChange}/>
+                    : <form onSubmit={applySelection}>
+                        <Stack>
+                            <Select size="md"
+                                    label="Select file"
+                                    description="Only feed data from this file"
+                                    leftSection={iconFile}
+                                    data={uploadedFiles} value={index} onChange={onIndexChange}/>
 
-                        <NumberInput
-                            label="Limit number of rows"
-                            description={`From total ${max}`}
-                            placeholder="Enter number"
-                            value={head} min={1} max={max}
-                            onChange={onHeadChange}
-                            size="md"
-                        />
+                            <NumberInput
+                                label="Limit number of rows"
+                                description={`From total ${max}`}
+                                placeholder="Enter number"
+                                value={head} min={1} max={max}
+                                onChange={onHeadChange}
+                                size="md"
+                            />
 
-                        <Button disabled={!dirty} onClick={applySelection}>Apply Selection</Button>
-                    </Stack>}
+                            <Button type="submit" disabled={!dirty}>Apply Selection</Button>
+                        </Stack>
+                    </form>}
             </Fieldset>
         </Group>
 

@@ -1,22 +1,21 @@
-import {Accordion, AppShell, Burger, MantineProvider, Stack} from '@mantine/core'
+import {useState} from 'react'
 import {useDisclosure} from '@mantine/hooks'
+import {Accordion, AppShell, Burger, MantineProvider, Stack} from '@mantine/core'
 import {IconDatabaseExport, IconMessageChatbot} from '@tabler/icons-react'
 
 import {useSession} from './hooks/fetch.ts'
+import {DataSelection} from './models/selection.ts'
 import DataSource from './components/DataSource'
+import Conversation from './components/Conversation.tsx'
 
 import './App.css'
-import Conversation from './components/Conversation.tsx'
-import {useState} from 'react'
-import {DataSelection} from './models/selection.ts'
 
 const iconData = <IconDatabaseExport/>
 const iconChat = <IconMessageChatbot/>
 
 function App() {
     const [opened, {toggle}] = useDisclosure()
-    const session = useSession()
-    console.log(session)
+    /*const session = */useSession()
     const [byDefault, setByDefault] = useState<boolean>(true)
     const [selection, setSelection] = useState<DataSelection | null>(null)
 
@@ -57,7 +56,7 @@ function App() {
                                     <Accordion.Control icon={iconChat}>Conversation</Accordion.Control>
                                     <Accordion.Panel>
                                         <Stack>
-                                            <Conversation byDefault={byDefault} selection={selection}/>
+                                            <Conversation selection={selection}/>
                                         </Stack>
                                     </Accordion.Panel>
                                 </Accordion.Item>

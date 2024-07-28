@@ -6,13 +6,11 @@ const apiUrl = 'http://localhost:8000'
 
 let session: Session | null = null
 
-
 export interface fetchOptions {
-    useFormData?: boolean,
     params?: Record<string, string|number>
 }
 
-export function postData<T>(path: string, data?: never | FormData | undefined | null, options?: fetchOptions): Promise<T> {
+export function postData<T>(path: string, data: unknown | null, options?: fetchOptions): Promise<T> {
     const url = new URL(apiUrl + path)
     if (options?.params) {
         Object.entries(options.params).forEach(([name, value]) => {
@@ -22,13 +20,36 @@ export function postData<T>(path: string, data?: never | FormData | undefined | 
     if (session) {
         url.searchParams.append('token', session.token)
     }
-    // const headers = !data ? undefined : {
-    //     'Content-Type': useFormData ? undefined : 'application/json',
-    // }
+    const headers = {
+        'Content-Type': 'application/json',
+    }
     return fetch(url.toString(), {
         method: 'POST',
-        // headers,
-        body: !data ? undefined : options?.useFormData ? data : JSON.stringify(data)
+        headers,
+        body: JSON.stringify(data)
+    }).then(response => {
+        if (!response.ok) {
+            if (response.status === 403)
+                return Promise.reject(new Error('Invalid session'))
+            return Promise.reject(new Error('Fetch error: ' + response.status))
+        }
+        return response.json()
+    })
+}
+
+export function postFormData<T>(path: string, data: FormData, options?: fetchOptions): Promise<T> {
+    const url = new URL(apiUrl + path)
+    if (options?.params) {
+        Object.entries(options.params).forEach(([name, value]) => {
+            url.searchParams.append(name, value.toString())
+        })
+    }
+    if (session) {
+        url.searchParams.append('token', session.token)
+    }
+    return fetch(url.toString(), {
+        method: 'POST',
+        body: data
     }).then(response => {
         if (!response.ok) {
             if (response.status === 403)

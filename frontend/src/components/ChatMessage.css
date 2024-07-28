@@ -1,5 +1,16 @@
 .ChatMessage {
+    padding: .5em;
+    border-radius: .5em;
+    &.user {
+        background: #f4f4f4;
+        .avatar {
+            order: 1;
+        }
+    }
     .text {
-        font-size: .8em;
+        font-size: .9em;
+    }
+    img.fetching {
+        width: 3em;
     }
 }
