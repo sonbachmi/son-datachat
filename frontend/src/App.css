@@ -2,6 +2,9 @@
     .main {
         /*text-align: center;*/
     }
+    .navbar {
+        background: #efefef;
+    }
 }
 
 @media (prefers-reduced-motion: no-preference) {

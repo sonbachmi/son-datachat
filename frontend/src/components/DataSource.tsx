@@ -1,10 +1,11 @@
-import {useState} from 'react'
+import {FC, useState} from 'react'
 
 import {Alert, Button, Fieldset, FileInput, Group, NumberInput, rem, Select, Stack} from '@mantine/core'
 import {IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
 
 import './DataSource.css'
 import {postData} from '../hooks/fetch.ts'
+import {DataSelection} from '../models/selection.ts'
 
 const icon = <IconFileTypeCsv style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
 const iconFile = <IconFileCheck/>
@@ -15,7 +16,13 @@ interface UploadedFile {
     rows: number
 }
 
-function DataSource() {
+interface Props {
+    byDefault: boolean,
+    clearByDefault: () => void,
+    setSelection: (selection: DataSelection | null) => void;
+}
+
+const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
     const [files, setFiles] = useState<File[]>([])
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
@@ -23,14 +30,20 @@ function DataSource() {
         // console.log(files)
         setFiles(files)
         setUploadedFiles([])
+        setSelection(null)
     }
     const selectFile = (index: number, uploadedFiles: UploadedFile[]) => {
         if (!uploadedFiles.length) return
         const f = uploadedFiles[index]
         setIndex(index.toString())
         setMax(f.rows)
-        setHead(f.rows.toString())
+        setHead(f.rows)
         setDirty(false)
+        clearByDefault()
+        setSelection({
+            filename: f.label,
+            head: f.rows
+        })
     }
     const upload = async () => {
         const formData = new FormData()
@@ -73,12 +86,18 @@ function DataSource() {
         setDirty(true)
     }
     const applySelection = async () => {
+        if (index == null) return
         setDirty(false)
+        const f = uploadedFiles[+index]
+        setSelection({
+            filename: f.label,
+            head: +head
+        })
         try {
             const data = await postData('/data/select', null, {
                 params: {
-                    index: index || '0',
-                    head: head || '1'
+                    index: index,
+                    head: head
                 }
             })
             console.log(data)
