@@ -2,11 +2,19 @@ import os
 
 import pandas as pd
 from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from main import create_session, get_session_by_token, Session
 
 api = FastAPI()
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 
 @api.get('/')
@@ -27,7 +35,7 @@ def create_api_session() -> SessionResponse:
 def get_session(token) -> Session:
     session = get_session_by_token(token)
     if session is None:
-        raise HTTPException(status_code=400, detail='Invalid session')
+        raise HTTPException(status_code=403, detail='Invalid session')
     return session
 
 

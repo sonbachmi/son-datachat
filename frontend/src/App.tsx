@@ -1,16 +1,19 @@
 import {Accordion, Alert, AppShell, Burger, MantineProvider} from '@mantine/core'
 import {useDisclosure} from '@mantine/hooks'
+import {IconDatabaseExport, IconInfoCircle, IconMessageChatbot} from '@tabler/icons-react'
 
+import {useSession} from './hooks/fetch.ts'
 import DataSource from './components/DataSource'
 
 import './App.css'
-import {IconDatabaseExport, IconInfoCircle, IconMessageChatbot} from '@tabler/icons-react'
 
 const iconData = <IconDatabaseExport/>
 const iconChat = <IconMessageChatbot/>
 
 function App() {
     const [opened, {toggle}] = useDisclosure()
+    const session = useSession()
+    console.log(session)
 
     return (
         <MantineProvider>
@@ -48,7 +51,8 @@ function App() {
                                 <Accordion.Item key="conversation" value="conversation">
                                     <Accordion.Control icon={iconChat}>Conversation</Accordion.Control>
                                     <Accordion.Panel>
-                                        <Alert variant="light" color="blue" title="Data selection required" icon={<IconInfoCircle/>}>
+                                        <Alert variant="light" color="blue" title="Data selection required"
+                                               icon={<IconInfoCircle/>}>
                                             Please select data to feed to this conversation
                                         </Alert>
                                     </Accordion.Panel>

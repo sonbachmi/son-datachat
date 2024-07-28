@@ -17,7 +17,16 @@ module.exports = {
         semi: ['warn', 'never'],
         quotes: ['warn', 'single', {avoidEscape: true}],
         'no-unused-vars': 'warn',
+        '@typescript-eslint/no-unused-vars': 'warn',
         'no-undef': 'warn',
         'prefer-const': 'warn',
     },
+    // overrides: [
+    //     {
+    //         files: '*.tsx',
+    //         rules: {
+    //             '@typescript-eslint/no-unused-vars': 'warn',
+    //         }
+    //     }
+    // ]
 }
