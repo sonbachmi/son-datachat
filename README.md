@@ -29,10 +29,10 @@ separate apps for the two tiers:
 [https://son-datachat-api.bachmi.com/docs](https://son-datachat-api.bachmi.com/docs)
 
 To run the server locally:
+- Create and activate your virtual env
+- Create `.env` file from `.env.example` (replacing the existing file as it is used for production), modify if desired
 - `pip install -r requirents.txt`
 - `fastapi dev server.py`
-
-The `.env` file with working local config for the engine is intentionally included to make this easy.
 
 ### Frontend Client
 
@@ -46,7 +46,7 @@ A working copy is already deployed here, which connects to the hosted API server
 To run the app locally (requiring **Node.js**)
 
 - `cd frontend`
-- Create .`env` file from `.env.example`, modify if desired
+- Create `.env` file from `.env.example`, modify if desired
 - `npm install`
 - `npm run dev`
 

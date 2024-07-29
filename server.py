@@ -1,7 +1,6 @@
 import os
 import random
 import re
-import shutil
 import string
 from pathlib import Path
 
@@ -118,24 +117,29 @@ def generate_filename(extension: str) -> str:
     )
 
 
+def render_image(path):
+    file = Path(path)
+    if file.is_file():
+        # try:
+        #     extension = os.path.splitext(file.name)[1][1:].lower()
+        #     out_filename = generate_filename(extension)
+        #     out_path = f'{root_path}/public/{out_filename}'
+        #     shutil.copy(path, out_path)
+        #     public_url = f'{st.secrets["SERVER_URL"] or os.environ["SERVER_URL"] or ""}/public/{out_filename}'
+        #     return public_url
+        # except (IOError, Exception):
+        #     return str(path)
+        public_url = f'{st.secrets["SERVER_URL"] or os.environ["SERVER_URL"] or "http://localhost:8000"}/public/{file.name}'
+        return public_url
+
+
 def render_answer(answer) -> (str, str):
     t = type(answer)
     if t is str:
         if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
-            file = Path(answer)
-            if file.is_file():
-                try:
-                    extension = os.path.splitext(file.name)[1][1:].lower()
-                    out_filename = generate_filename(extension)
-                    out_path = f'{root_path}/public/{out_filename}'
-                    shutil.copy(answer, out_path)
-                    public_url = f'{st.secrets('SERVER_URL') or os.environ['SERVER_URL'] or ''}/public/{out_filename}'
-                    return str(f'<img src="{public_url}" alt="See image for answer">'), 'html'
-                except (ValueError, Exception):
-                    return str(answer)
+            return str(f'<img src="{render_image(answer)}" alt="See image for answer">'), 'html'
     elif t is pd.DataFrame:
-        return answer.to_string()
-        # return answer.to_html(), 'html'
+        return answer.to_html(), 'html'
     return str(answer)
 
 
@@ -150,4 +154,3 @@ async def post_query(query: QueryInput, token: str) -> QueryResponse:
         return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')
     except (ValueError, Exception):
         raise HTTPException(status_code=500, detail='System error')
-

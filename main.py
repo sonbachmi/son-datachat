@@ -1,3 +1,4 @@
+import os
 import random
 import string
 from enum import Enum
@@ -43,10 +44,13 @@ class Session:
         return {
             'llm': self.openAiLLM if self.model == ModelName.openai else self.bambooLLM,
             'response_parser': StreamlitResponse if self.use_streamlit else None,
+            "save_charts": True,
+            "save_charts_path": os.path.join(os.getcwd(), 'public'),
         }
 
     def set_model(self, model: ModelName):
         self.model = model
+        self.agent = Agent(self.df, self.get_config(), memory_size=10)
 
     def set_data(self, dfs: list[pd.DataFrame]):
         if not len(dfs):

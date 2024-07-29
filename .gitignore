@@ -4,6 +4,7 @@
 # Private
 #.env
 *.local
+.streamlit/secrets.toml
 
 #Personal dev config
 pylintrc

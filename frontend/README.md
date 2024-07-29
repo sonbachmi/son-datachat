@@ -10,7 +10,7 @@ To run the app locally:
 
 - Make sure **Node.js** is installed
 - `cd frontend`
-- Create .`env` file from `.env.example`, modify if desired
+- Create `.env` file from `.env.example`, modify if desired
 - `npm install`
 - `npm run dev`
 

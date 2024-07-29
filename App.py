@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from main import create_session, set_model, set_data, get_chat_response
+from server import render_image
 
 st.set_page_config(
     page_title="Son's Data Chat",
@@ -21,7 +22,7 @@ st.html(f'<style>{css}</style>')
 
 
 st.sidebar.image('assets/logo.png')
-st.sidebar.markdown('# Settings')
+st.sidebar.markdown('## Settings')
 
 st.title("Son's Data Chat")
 
@@ -48,9 +49,7 @@ def response_generator(answer):
 if 'token' not in st.session_state:
     st.session_state.token = create_session(True)
 token = st.session_state.token
-#
-# if 'model' not in st.session_state:
-#     st.session_state.model = ['openai']
+
 
 def on_model_change():
     model = st.session_state.get('model', 'openai')
@@ -117,12 +116,12 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
         set_data([df], token)
 
 
-def write_response(answer):
+def write_response(answer, fresh = False):
     if isinstance(answer, str):
         # if answer.lower().endswith('.png') or answer.lower().endswith('.jpg'):
         if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
             return st.image(answer)
-        return st.write(response_generator(answer))
+        return st.write(response_generator(answer) if fresh else answer)
     return st.write(answer)
 
 
@@ -130,7 +129,6 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
     if not num_files:
         st.warning('Please select data source first.')
     else:
-        # st.subheader('Chat')
 
         # Initialize chat history
         if 'messages' not in st.session_state:
@@ -141,17 +139,23 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:
             with messages.chat_message(message['role']):
-                st.write(message['content'])
+                if (message['role'] == 'iser'):
+                    st.write(message['content'])
+                else:
+                    if False and 'image' in message:
+                        st.image(message['image'])
+                    else:
+                        write_response(message['content'])
         # Add last assistant response in queue to display and history
         if 'last_answer' in st.session_state:
             last_answer = st.session_state.last_answer
             del st.session_state.last_answer
-            st.session_state.messages.append(
-                {'role': 'assistant', 'content': last_answer}
-            )
             with messages.chat_message('assistant'):
                 print('Answer', last_answer, type(last_answer))
-                write_response(last_answer)
+                render = write_response(last_answer, fresh=True)
+                st.session_state.messages.append(
+                    {'role': 'assistant', 'content': last_answer}
+                )
         if 'submitting' not in st.session_state:
             st.session_state.submitting = False
 
