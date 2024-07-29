@@ -11,6 +11,7 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import streamlit as st
 
 from main import create_session, get_session_by_token, Session, ModelName
 
@@ -128,20 +129,25 @@ def render_answer(answer) -> (str, str):
                     out_filename = generate_filename(extension)
                     out_path = f'{root_path}/public/{out_filename}'
                     shutil.copy(answer, out_path)
-                    public_url = f'{os.environ['SERVER_URL'] or ''}/public/{out_filename}'
+                    public_url = f'{st.secrets('SERVER_URL') or os.environ['SERVER_URL'] or ''}/public/{out_filename}'
                     return str(f'<img src="{public_url}" alt="See image for answer">'), 'html'
-                except (IOError, Exception):
+                except (ValueError, Exception):
                     return str(answer)
     elif t is pd.DataFrame:
-        return answer.to_html(), 'html'
+        return answer.to_string()
+        # return answer.to_html(), 'html'
     return str(answer)
 
 
 @api.post('/query')
 async def post_query(query: QueryInput, token: str) -> QueryResponse:
     session = get_session(token)
-    resp = session.get_chat_response(query.query)
-    t = type(resp)
-    answer, sformat = render_answer(resp)
-    # print('Returning answer:', str_answer)
-    return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')
+    try:
+        resp = session.get_chat_response(query.query)
+        t = type(resp)
+        answer, sformat = render_answer(resp)
+        # print('Returning answer:', str_answer)
+        return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')
+    except (ValueError, Exception):
+        raise HTTPException(status_code=500, detail='System error')
+

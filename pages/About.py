@@ -9,5 +9,5 @@ st.sidebar.markdown('# ℹ️ About️')
 st.sidebar.markdown('TODO: Display README.md file content in this page')
 
 st.title('ℹ️ About this app️')
-st.markdown('*Son\'s Data Chat* is a Streamlit app using the LLM engine of the main project, \
+st.markdown('**Son\'s Data Chat** is a Streamlit client app connecting to the LLM engine of the main project, \
     which answers a challenge by Cyber Sierra.')

@@ -10,7 +10,7 @@
 ## Streamlit App
 
 `App.py` (and another sample content page) is a frontend app built with **Streamlit** to input data by uploading files, selecting scope for context and conducting a conversation with the engine
-as required by the assigment. A simple About page is also included.
+as required by the assigment. Response formats of text, `DataFrame` and images are supported. A simple _About_ page is also included.
 
 A working copy is already deployed here:
 
@@ -18,12 +18,13 @@ A working copy is already deployed here:
 
 
 ## Fullstack App
-The app serves the purpose for this simple application, but with limited control over the styling and flow. In a real production scenario, 
-a fullstack server-client application may be advised for full-blown usage. So for demonstration purpose I also develop this as an alternative solution, which includes the following:
+The _Streamlit_ app serves the purpose for this simple application, but offers limited control over the styling and flow. In a real production scenario, 
+a fullstack server-client application may be advised for full-blown usage. So as an alternative solution for demonstration purpose, I've also developed
+separate apps for the two tiers:
 
 ### API Server
 
-`server.py` is a **Fastapi** server connecting with the engine and exposed as public REST API. A working copy is already deployed here:
+`server.py` is a **Fastapi** server connecting with the engine and exposing functions as public REST API. A working copy is already deployed here:
 
 [https://son-datachat-api.bachmi.com/docs](https://son-datachat-api.bachmi.com/docs)
 
@@ -31,16 +32,16 @@ To run the server locally:
 - `pip install -r requirents.txt`
 - `fastapi dev server.py`
 
-The `.env` file with working config for the engine is intentionally included to make this easy.
+The `.env` file with working local config for the engine is intentionally included to make this easy.
 
 ### Frontend Client
 
 Inside `frontend` is a modern **React Typescript** application acting as a client UI to connect with the engine via the REST API. The flow is similar to the _Streamlit_ app.
-Mobile view is basically supported.
+Response formats of text, `DataFrame` and images are supported. Mobile view is minimally supported.
 
-A working copy is already deployed here, which connects to the API server above:
+A working copy is already deployed here, which connects to the hosted API server:
 
-[https://son-datachat.com](https://son-datachat-api.bachmi.com/docs)
+[https://son-datachat.bachmi.com](https://son-datachat.bachmi.com)
 
 To run the app locally (requiring **Node.js**)
 
@@ -49,7 +50,8 @@ To run the app locally (requiring **Node.js**)
 - `npm install`
 - `npm run dev`
 
-To provide API for the app, you also need to run a local version of the _Fastapi_ server as mentioned above.
+To provide API for the app, you also need to run a local version of the _Fastapi_ server as mentioned above. 
+Or you can just use the existing public server by changing the URL in the `.env`, or copy from `env.production`.
 
 Feel free to review the running demos and the source code. Documentation is made where useful in the code to help follow my thought process while developing.
 The `git` history may also help on that.
@@ -58,3 +60,4 @@ The `git` history may also help on that.
 
 Unit tests for all Python apps are in the `tests` folder; run with `pytest` Make sure the tests run in the project root directory, and a local
 server is not running (to avoid conflict with the server created by the tests.)
+

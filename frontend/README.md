@@ -15,3 +15,4 @@ To run the app locally:
 - `npm run dev`
 
 To provide API for the app, you also need to run a local version of the **Fastapi** server as mentioned in the main `README`.
+Or you can just use the existing public server by changing the URL in the `.env`, or copy from `env.production`.

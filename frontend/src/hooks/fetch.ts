@@ -34,6 +34,9 @@ export function postData<T>(path: string, data?: unknown | null, options?: fetch
             return Promise.reject(new Error('Fetch error: ' + response.status))
         }
         return response.json()
+    }).catch(error => {
+        console.error(error)
+        return Promise.reject(new Error('API error: ' + error.message))
     })
 }
 
