@@ -1,8 +1,0 @@
-[format]
-# Prefer single quotes over double quotes.
-quote-style = "single"
-docstring-code-format = true
-
-[lint]
-# Skip unused variable rules (`F841`).
-ignore = ["F841"]

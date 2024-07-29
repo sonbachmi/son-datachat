@@ -2,8 +2,13 @@
 .venv
 
 # Private
-.env
+#.env
 *.local
+
+#Personal dev config
+pylintrc
+ruff.toml
+.Scripts
 
 #PandasAi
 /cache
