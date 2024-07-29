@@ -1,9 +1,12 @@
 import {Message} from '../models/conversation.ts'
 import {Avatar, Group} from '@mantine/core'
-import {IconMoodEmptyFilled, IconRobotFace} from '@tabler/icons-react'
+import {IconMoodEmpty, IconRobotFace} from '@tabler/icons-react'
 
 import './ChatMessage.css'
 import iagFetching from '@/assets/typing.gif'
+
+const iconUser = <IconMoodEmpty size="1.7rem"/>
+const iconAi = <IconRobotFace size="1.7rem"/>
 
 function ChatMessage({message}: { message: Message }) {
     const isUser = message.role === 'user'
@@ -11,16 +14,16 @@ function ChatMessage({message}: { message: Message }) {
         <Group justify={isUser ? 'flex-end' : 'flex-start'}>
             {isUser ?
                 <Avatar color="pink" radius="md" className="avatar">
-                    <IconMoodEmptyFilled size="1.7rem"/>
+                    {iconUser}
                 </Avatar> :
                 <Avatar color="orange" radius="md" className="avatar">
-                    <IconRobotFace size="1.7rem"/>
+                    {iconAi}
                 </Avatar>
             }
             <div className="text">
                 {message.type === 'fetching' ? <img className="fetching" src={iagFetching} alt="Loading..."/> :
                     message.type === 'html' ? <div dangerouslySetInnerHTML={{__html: message.message}}/>
-                    : message.message.toString()}
+                        : message.message.toString()}
             </div>
         </Group>
     </div>

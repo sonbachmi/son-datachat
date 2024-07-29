@@ -9,7 +9,7 @@ import streamlit as st
 from main import create_session, set_data, get_chat_response
 
 st.set_page_config(
-    page_title="Son's CS App",
+    page_title="Son's Data Chat",
     page_icon='👋',
     layout='wide',
     menu_items={'About': "# Son's CS App"},
@@ -18,7 +18,6 @@ st.set_page_config(
 with open('./assets/app.css') as f:
     css = f.read()
 st.html(f'<style>{css}</style>')
-
 
 # Streamed response emulator
 def response_generator(answer):
@@ -39,27 +38,27 @@ def response_generator(answer):
     yield ''
 
 
-# st.markdown('# Main page 🎈')
-st.sidebar.markdown('# Settings 🎈')
+st.sidebar.markdown('# Settings')
 
-st.title("Son's CS App")
+st.title("Son's Data Chat")
 
 llm = st.sidebar.selectbox('Use LLM', ['BambooLLM', 'OpenAI'], index=1)
 
 
 if 'token' not in st.session_state:
     st.session_state.token = create_session(True)
-
 token = st.session_state.token
 
 
-@st.cache_data(hash_funcs={'io.BytesIO': lambda f: f.name + len(f.getvalue())})
+# Nice to cache the file by hashing file name and size, good for developent
+# In production or in case of open file conflicts may need better hashing
+# @st.cache_data(hash_funcs={'io.BytesIO': lambda f: f.name + len(f.getvalue())})
 def get_data(f):
-    extension = os.path.splitext(f.name)[1][1:]
+    extension = os.path.splitext(f.name)[1][1:].lower()
     df = pd.read_csv(f) if extension == 'csv' else pd.read_excel(f)
     return df
 
-
+# Store number of uploaded files in state
 num_files = len(st.session_state.files) if 'files' in st.session_state else 0
 
 with st.expander('**Data Source**', icon=':material/database:', expanded=True):
@@ -76,8 +75,7 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
         num_files = len(files)
         one_file = num_files == 1
         selected_index = (
-            0
-            if one_file
+            0 if one_file
             else st.selectbox(
                 'Select file',
                 range(num_files),
@@ -95,7 +93,7 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
                 )
         rows = len(df.index)
         nrows = st.number_input(
-            f'Take number of rows from total {rows}', 1, rows, value=rows, step=10
+            f'Limit number of rows from total {rows}', 1, rows, value=rows, step=10
         )
         df = df.head(nrows)
         show_raw = st.toggle('Show raw data')
@@ -106,7 +104,7 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
                 else f'Selected data contains first {nrows} rows only'
             )
             st.dataframe(df, hide_index=True)
-        set_data(df, token)
+        set_data([df], token)
 
 
 def write_response(answer):
@@ -123,23 +121,17 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
         st.warning('Please select data source first.')
     else:
         # st.subheader('Chat')
-        # st.success('Ask your AI assistant for help on the selected data source.')
-        # with st.chat_message('ai'):
-        #     st.write('Hello 👋 How can I help you on this?')
-        # prompt = st.chat_input('Say something')
-        # if prompt:
-        #     st.write(f'User has sent the following prompt: {prompt}')
 
         # Initialize chat history
         if 'messages' not in st.session_state:
             st.session_state.messages = []
+        messages = st.container()
 
         # Display message list
-        messages = st.container()
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:
             with messages.chat_message(message['role']):
-                st.markdown(message['content'])
+                st.write(message['content'])
         # Add last assistant response in queue to display and history
         if 'last_answer' in st.session_state:
             last_answer = st.session_state.last_answer

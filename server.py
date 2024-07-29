@@ -1,13 +1,25 @@
 import os
+import random
+import re
+import shutil
+import string
+from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from main import create_session, get_session_by_token, Session
 
+load_dotenv()
+
+
 api = FastAPI()
+api.mount('/public', StaticFiles(directory='public'), name='static')
+
 api.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -81,13 +93,40 @@ class QueryResponse(BaseModel):
     html: bool
 
 
+def generate_filename(extension: str) -> str:
+    return (
+        ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+        + '.'
+        + extension
+    )
+
+
+def render_answer(answer) -> (str, str):
+    t = type(answer)
+    if t is str:
+        if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
+            file = Path(answer)
+            if file.is_file():
+                try:
+                    root_path = os.path.dirname(os.path.realpath(__file__))
+                    extension = os.path.splitext(file.name)[1][1:].lower()
+                    out_filename = generate_filename(extension)
+                    out_path = f'{root_path}/public/{out_filename}'
+                    shutil.copy(answer, out_path)
+                    public_url = f'{os.environ['SERVER_URL'] or ''}/public/{out_filename}'
+                    return str(f'<img src="{public_url}" alt="See image for answer">'), 'html'
+                except (IOError, Exception):
+                    return str(answer)
+    elif t is pd.DataFrame:
+        return answer.to_html(), 'html'
+    return str(answer)
+
+
 @api.post('/query')
 async def post_query(query: QueryInput, token: str) -> QueryResponse:
     session = get_session(token)
-    if session is None:
-        raise HTTPException(status_code=400, detail='Invalid session')
-    answer = session.get_chat_response(query.query)
-    t = type(answer)
-    str_answer = answer.to_html() if t is pd.DataFrame else str(answer)
+    resp = session.get_chat_response(query.query)
+    t = type(resp)
+    answer, sformat = render_answer(resp)
     # print('Returning answer:', str_answer)
-    return QueryResponse(answer=str_answer, type=t.__name__, html=t is pd.DataFrame)
+    return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')

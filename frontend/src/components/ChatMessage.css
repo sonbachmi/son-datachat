@@ -9,6 +9,10 @@
     }
     .text {
         font-size: .9em;
+        img {
+            width: 100%;
+            max-width: 100%;
+        }
     }
     img.fetching {
         width: 3em;

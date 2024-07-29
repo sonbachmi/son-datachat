@@ -48,7 +48,6 @@ class Session:
         self.model = model
 
     def set_data(self, dfs: list[pd.DataFrame]):
-        # df = pd.read_csv('data/titanic.csv', nrows=200)
         if not len(dfs):
             raise Exception('Setting empty data')
         self.datasets = dfs

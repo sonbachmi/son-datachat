@@ -2,15 +2,15 @@ import {useEffect, useState} from 'react'
 
 import {Session} from '../models/session.ts'
 
-const apiUrl = 'http://localhost:8000'
+const apiUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'
 
 let session: Session | null = null
 
 export interface fetchOptions {
-    params?: Record<string, string|number>
+    params?: Record<string, string | number>
 }
 
-export function postData<T>(path: string, data: unknown | null, options?: fetchOptions): Promise<T> {
+export function postData<T>(path: string, data?: unknown | null, options?: fetchOptions): Promise<T> {
     const url = new URL(apiUrl + path)
     if (options?.params) {
         Object.entries(options.params).forEach(([name, value]) => {
@@ -52,11 +52,33 @@ export function postFormData<T>(path: string, data: FormData, options?: fetchOpt
         body: data
     }).then(response => {
         if (!response.ok) {
-            if (response.status === 403)
-                return Promise.reject(new Error('Invalid session'))
+            if (response.status === 403) {
+                // If invalid session, automatically create new session and retry
+                console.log('Expired session, attempting new')
+                return create_session().then(() =>
+                    fetch(url.toString(), {
+                        method: 'POST',
+                        body: data
+                    }).then(response => {
+                        if (!response.ok) {
+                            if (response.status === 403) {
+                                return Promise.reject(new Error('Invalid session after 1 retry'))
+                            }
+                            return Promise.reject(new Error('Fetch error: ' + response.status))
+                        }
+                        return response.json()
+                    }))
+            }
             return Promise.reject(new Error('Fetch error: ' + response.status))
         }
         return response.json()
+    })
+}
+
+export function create_session() {
+    return postData<Session>('/session').then((new_session: Session) => {
+        session = new_session
+        return new_session
     })
 }
 

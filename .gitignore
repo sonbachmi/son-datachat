@@ -1,8 +1,9 @@
-#Env
+# Env
 .venv
 
-#Private
+# Private
 .env
+*.local
 
 #PandasAi
 /cache
