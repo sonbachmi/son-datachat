@@ -1,19 +1,61 @@
 .ChatMessage {
     padding: .5em;
     border-radius: .5em;
+
     &.user {
         background: #f4f4f4;
+
         .avatar {
             order: 1;
         }
     }
+
     .text {
         font-size: .9em;
+
         img {
             width: 100%;
             max-width: 100%;
         }
+
+        table {
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.9em;
+            font-family: sans-serif;
+            min-width: 400px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+
+            thead tr {
+                background-color: var(--mantine-primary-color-9);
+                color: #ffffff;
+                text-align: left;
+            }
+
+            th, td {
+                padding: 12px 15px;
+            }
+
+            th {
+                text-align: center;
+            }
+
+            tbody {
+                tr {
+                    border-bottom: 1px solid #dddddd;
+                }
+
+                &:nth-of-type(even) {
+                    background-color: #f3f3f3;
+                }
+
+                &:last-of-type {
+                    border-bottom: 2px solid var(--mantine-primary-color-9);
+                }
+            }
+        }
     }
+
     img.fetching {
         width: 3em;
     }

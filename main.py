@@ -24,7 +24,7 @@ def generate_token():
 
 
 class Session:
-    id: int = ++incId
+    id: int
     token: str
     model: ModelName = ModelName.openai
     bambooLLM = BambooLLM()
@@ -35,6 +35,7 @@ class Session:
     df: pd.DataFrame = None
 
     def __init__(self, use_streamlit=False):
+        self.id = ++incId
         self.use_streamlit = use_streamlit
         self.token = generate_token()
 

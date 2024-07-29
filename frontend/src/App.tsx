@@ -38,7 +38,7 @@ function App() {
                             hiddenFrom="sm"
                             size="sm"
                         />
-                        <div>Son's CS App</div>
+                        <div>Son's Data Chat</div>
                     </AppShell.Header>
 
                     <AppShell.Navbar p="md" className="navbar"></AppShell.Navbar>
