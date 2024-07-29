@@ -85,6 +85,11 @@ def get_session_by_token(token: str):
     return session
 
 
+def set_model(name: str, token: str):
+    model = ModelName.openai if name == 'openai' else ModelName.bamboo
+    session = get_session_by_token(token)
+    session.set_model(model)
+
 def set_data(dfs: list[pd.DataFrame], token: str):
     session = get_session_by_token(token)
     session.set_data(dfs)

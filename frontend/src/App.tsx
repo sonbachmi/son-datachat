@@ -9,6 +9,7 @@ import DataSource from './components/DataSource'
 import Conversation from './components/Conversation.tsx'
 
 import './App.css'
+import Settings from './components/Settings.tsx'
 
 const iconData = <IconDatabaseExport/>
 const iconChat = <IconMessageChatbot/>
@@ -41,7 +42,9 @@ function App() {
                         <div>Son's Data Chat</div>
                     </AppShell.Header>
 
-                    <AppShell.Navbar p="md" className="navbar"></AppShell.Navbar>
+                    <AppShell.Navbar p="md" className="navbar">
+                        <Settings/>
+                    </AppShell.Navbar>
 
                     <AppShell.Main>
                         <div className="main">

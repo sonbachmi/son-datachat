@@ -12,13 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from main import create_session, get_session_by_token, Session
+from main import create_session, get_session_by_token, Session, ModelName
 
 load_dotenv()
 
+root_path = os.path.dirname(os.path.realpath(__file__))
 
 api = FastAPI()
-api.mount('/public', StaticFiles(directory='public'), name='static')
+api.mount('/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static')
 
 api.add_middleware(
     CORSMiddleware,
@@ -30,8 +31,8 @@ api.add_middleware(
 
 
 @api.get('/')
-def read_root():
-    return {'app': "Son's CS App"}
+def about():
+    return {'app': "Son's Data Chat API App"}
 
 
 class SessionResponse(BaseModel):
@@ -51,25 +52,40 @@ def get_session(token) -> Session:
     return session
 
 
+class SetModelResponse(BaseModel):
+    model: str
+
+
+@api.post('/model')
+async def set_model(model: str, token: str) -> SetModelResponse:
+    session = get_session(token)
+    session.set_model(ModelName.openai if model == 'openai' else ModelName.bamboo)
+    print('Switched model to:', model)
+    return SetModelResponse(model=model)
+
+
 class UploadResponse(BaseModel):
     rows: list[int]
     selectedIndex: int
 
 
 @api.post('/data/input')
-async def create_upload_files(files: list[UploadFile], token: str) -> UploadResponse:
+async def upload_files(files: list[UploadFile], token: str) -> UploadResponse:
     session = get_session(token)
     rows = []
     dfs = []
-    for file in files:
-        extension = os.path.splitext(file.filename)[1][1:].lower()
-        if extension not in ['csv', 'xlsx']:
-            raise HTTPException(status_code=400, detail='Data file must be CSV or XLSX')
-        df = pd.read_csv(file.file) if extension == 'csv' else pd.read_excel(file.file)
-        dfs.append(df)
-        rows.append(len(df.index))
-    session.set_data(dfs)
-    return UploadResponse(rows=rows, selectedIndex=0)
+    try:
+        for file in files:
+            extension = os.path.splitext(file.filename)[1][1:].lower()
+            if extension not in ['csv', 'xlsx']:
+                raise HTTPException(status_code=400, detail='Data file must be CSV or XLSX')
+            df = pd.read_csv(file.file) if extension == 'csv' else pd.read_excel(file.file)
+            dfs.append(df)
+            rows.append(len(df.index))
+        session.set_data(dfs)
+        return UploadResponse(rows=rows, selectedIndex=0)
+    except (IOError, Exception):
+        raise HTTPException(status_code=500, detail='System error')
 
 
 class SetDataResponse(BaseModel):
@@ -77,7 +93,7 @@ class SetDataResponse(BaseModel):
 
 
 @api.post('/data/select')
-async def post_select_data(index: int, head: int, token: str) -> SetDataResponse:
+async def select_data(index: int, head: int, token: str) -> SetDataResponse:
     session = get_session(token)
     session.select_data(index, head)
     return SetDataResponse(selectedIndex=index)
@@ -95,9 +111,9 @@ class QueryResponse(BaseModel):
 
 def generate_filename(extension: str) -> str:
     return (
-        ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
-        + '.'
-        + extension
+            ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+            + '.'
+            + extension
     )
 
 
@@ -108,7 +124,6 @@ def render_answer(answer) -> (str, str):
             file = Path(answer)
             if file.is_file():
                 try:
-                    root_path = os.path.dirname(os.path.realpath(__file__))
                     extension = os.path.splitext(file.name)[1][1:].lower()
                     out_filename = generate_filename(extension)
                     out_path = f'{root_path}/public/{out_filename}'

@@ -131,7 +131,7 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
                             <Select size="md"
                                     label="Select file"
                                     description="Only feed data from this file"
-                                    leftSection={iconFile}
+                                    leftSection={iconFile} checkIconPosition="left"
                                     data={uploadedFiles} value={index} onChange={onIndexChange}/>
 
                             <NumberInput

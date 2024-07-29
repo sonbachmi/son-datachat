@@ -6,13 +6,13 @@ import time
 import pandas as pd
 import streamlit as st
 
-from main import create_session, set_data, get_chat_response
+from main import create_session, set_model, set_data, get_chat_response
 
 st.set_page_config(
     page_title="Son's Data Chat",
     page_icon='👋',
     layout='wide',
-    menu_items={'About': "# Son's CS App"},
+    menu_items={'About': "### Data Chat Challenge Solution"},
 )
 
 with open('./assets/app.css') as f:
@@ -42,13 +42,20 @@ st.sidebar.markdown('# Settings')
 
 st.title("Son's Data Chat")
 
-llm = st.sidebar.selectbox('Use LLM', ['BambooLLM', 'OpenAI'], index=1)
-
-
 if 'token' not in st.session_state:
     st.session_state.token = create_session(True)
 token = st.session_state.token
+#
+# if 'model' not in st.session_state:
+#     st.session_state.model = ['openai']
 
+def on_model_change():
+    model = st.session_state.get('model', 'openai')
+    set_model(model, token)
+    print('Switched model to:', model)
+    st.toast(f'Model switched to {model}', icon=':material/check_circle:')
+
+llm = st.sidebar.selectbox('Use LLM', ['BambooLLM', 'OpenAI'], index=1, key='model', on_change=on_model_change)
 
 # Nice to cache the file by hashing file name and size, good for developent
 # In production or in case of open file conflicts may need better hashing

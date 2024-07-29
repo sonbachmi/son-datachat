@@ -29,7 +29,27 @@ def test_upload(session_token: str):
     assert len(rows) == 2
 
 
-def test_conversation(session_token: str):
+def test_model_switch(session_token: str):
+
+    # Test model switching
+    response = client.post(
+        f'/model?model=bamboo&token={session_token}')
+    assert response.status_code < 300
+    assert response.json() == {'model': 'bamboo'}
+    response = client.post(
+        f'/model?model=openai&token={session_token}')
+    assert response.status_code < 300
+    assert response.json() == {'model': 'openai'}
+
+
+def test_full_conversation_flow(session_token: str):
+
+    # Test model switching
+    response = client.post(
+        f'/model?model=openai&token={session_token}')
+    assert response.status_code < 300
+    assert response.json() == {'model': 'openai'}
+
     files = [
         ('files', open('data/titanic.csv', 'rb')),
         ('files', open('data/titanic.xlsx', 'rb')),

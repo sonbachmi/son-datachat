@@ -3,7 +3,7 @@ import {Avatar, Group} from '@mantine/core'
 import {IconMoodEmpty, IconRobotFace} from '@tabler/icons-react'
 
 import './ChatMessage.css'
-import iagFetching from '@/assets/typing.gif'
+import imgFetching from '@/assets/typing.gif'
 
 const iconUser = <IconMoodEmpty size="1.7rem"/>
 const iconAi = <IconRobotFace size="1.7rem"/>
@@ -21,7 +21,7 @@ function ChatMessage({message}: { message: Message }) {
                 </Avatar>
             }
             <div className="text">
-                {message.type === 'fetching' ? <img className="fetching" src={iagFetching} alt="Loading..."/> :
+                {message.type === 'fetching' ? <img className="fetching" src={imgFetching} alt="Loading..."/> :
                     message.type === 'html' ? <div dangerouslySetInnerHTML={{__html: message.message}}/>
                         : message.message.toString()}
             </div>
