@@ -1,2 +1,60 @@
 # Son's Data Chat App
+### Solution to technical challenge from Cyber Sierra
+#### Author: Son Nguyen <son@bachmi.com>, Senior Fullstack Engineer applicant
 
+
+## Data Chat Engine
+
+`main.py` is the core business module of the app, using **PandasAI** with **OpenAI** LLM support out of the box, and its own model **BambooLLM**.
+
+## Streamlit App
+
+`App.py` (and another sample content page) is a frontend app built with **Streamlit** to input data by uploading files, selecting scope for context and conducting a conversation with the engine
+as required by the assigment. A simple About page is also included.
+
+A working copy is already deployed here:
+
+[https://son-datachat.streamlit.app](https://son-datachat.streamlit.app)
+
+
+## Fullstack App
+The app serves the purpose for this simple application, but with limited control over the styling and flow. In a real production scenario, 
+a fullstack server-client application may be advised for full-blown usage. So for demonstration purpose I also develop this as an alternative solution, which includes the following:
+
+### API Server
+
+`server.py` is a **Fastapi** server connecting with the engine and exposed as public REST API. A working copy is already deployed here:
+
+[https://son-datachat-api.bachmi.com/docs](https://son-datachat-api.bachmi.com/docs)
+
+To run the server locally:
+- `pip install -r requirents.txt`
+- `fastapi dev server.py`
+
+The `.env` file with working config for the engine is intentionally included to make this easy.
+
+### Frontend Client
+
+Inside `frontend` is a modern **React Typescript** application acting as a client UI to connect with the engine via the REST API. The flow is similar to the _Streamlit_ app.
+Mobile view is basically supported.
+
+A working copy is already deployed here, which connects to the API server above:
+
+[https://son-datachat.com](https://son-datachat-api.bachmi.com/docs)
+
+To run the app locally (requiring **Node.js**)
+
+- `cd frontend`
+- Create .`env` file from `.env.example`, modify if desired
+- `npm install`
+- `npm run dev`
+
+To provide API for the app, you also need to run a local version of the _Fastapi_ server as mentioned above.
+
+Feel free to review the running demos and the source code. Documentation is made where useful in the code to help follow my thought process while developing.
+The `git` history may also help on that.
+
+## Tests
+
+Unit tests for all Python apps are in the `tests` folder; run with `pytest` Make sure the tests run in the project root directory, and a local
+server is not running (to avoid conflict with the server created by the tests.)
