@@ -6,9 +6,10 @@ import {postData} from '../hooks/fetch.ts'
 import {ChatResponse} from '../models/conversation.ts'
 
 import './Settings.css'
+import Logo from './Logo.tsx'
 
 const models = [
-    {value: 'bamboo', label: 'Bamboo'},
+    {value: 'bamboo', label: 'BambooLLM'},
     {value: 'openai', label: 'OpenAI'}
 ]
 
@@ -25,12 +26,16 @@ function Settings() {
             console.error(error)
         }
     }
-    return (<Stack className="Settings">
+    return (<Stack className="Settings" align="center">
+            <div className="logo">
+                <Logo/>
+            </div>
             <Select size="md"
-                    label="Use model"
-                    description="Select LLM for conversation"
+                    label="Select model"
+                    description="Use this LLM for conversation"
                     leftSection={<IconAi/>} checkIconPosition="left"
                     data={models} value={model} onChange={handleModelChange}/>
+
         </Stack>
     )
 }

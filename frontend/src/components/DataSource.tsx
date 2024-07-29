@@ -1,11 +1,12 @@
 import {FC, FormEvent, useState} from 'react'
 
-import {Alert, Button, Fieldset, FileInput, Group, NumberInput, rem, Select, Stack} from '@mantine/core'
+import {Alert, Button, Fieldset, FileInput, NumberInput, rem, Select, Stack} from '@mantine/core'
 import {IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
 
-import './DataSource.css'
 import {postData, postFormData} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
+
+import './DataSource.css'
 
 const icon = <IconFileTypeCsv style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
 const iconFile = <IconFileCheck/>
@@ -104,9 +105,8 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
         }
     }
 
-    return <div className="DataSource">
-
-        <Group align="flex-start">
+    return (
+        <div className="DataSource">
             <Fieldset legend="Data Input" className="fieldset">
                 <Stack>
                     <FileInput multiple clearable
@@ -123,7 +123,7 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
             </Fieldset>
             <Fieldset legend="Data Selector" className="fieldset">
                 {!uploadedFiles.length ?
-                    <Alert variant="light" color="blue" title="Data input required" icon={<IconInfoCircle/>}>
+                    <Alert variant="light" color="orange" title="Data input required" icon={<IconInfoCircle/>}>
                         Please upload data for selection
                     </Alert>
                     : <form onSubmit={applySelection}>
@@ -147,9 +147,7 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
                         </Stack>
                     </form>}
             </Fieldset>
-        </Group>
-
     </div>
-}
+    )}
 
 export default DataSource

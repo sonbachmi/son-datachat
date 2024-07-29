@@ -1,9 +1,19 @@
+:root {
+    --app-shell-header-height: 80px;
+}
+
 .App {
+    header {
+        background: #fae3d9;
+    }
+
     .main {
         /*text-align: center;*/
     }
+
     .navbar {
-        background: #efefef;
+        /*background: rgba(34, 139, 230, 0.1);*/
+        background: var(--color-primary);
     }
 }
 

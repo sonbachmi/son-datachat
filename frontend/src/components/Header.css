@@ -1,0 +1,7 @@
+.Header {
+    position: relative;
+    padding: .5em 1em .5em var(--app-shell-navbar-width);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+}

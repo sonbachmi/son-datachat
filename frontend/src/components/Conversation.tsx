@@ -62,12 +62,12 @@ function Conversation({selection}: { selection: DataSelection | null }) {
     }
     return <div className="Conversation">
         {!selection ?
-            <Alert variant="light" color="blue" title="Data selection required"
+            <Alert variant="light" color="orange" title="Data selection required"
                    icon={<IconInfoCircle/>}>
                 Please select data to feed to this conversation
             </Alert> :
             <Stack>
-                <Alert variant="light" color="green" title="Data selection applied"
+                <Alert variant="light" color="blue" title="Data selection applied"
                        icon={<IconInfoCircle/>}>
                     You selected {selection?.head} rows from source <strong>{selection?.filename}</strong>. The
                     discussion is now limited to this set of data.

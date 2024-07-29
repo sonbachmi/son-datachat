@@ -1,7 +1,20 @@
 .DataSource {
     width: 100%;
-    justify-content: space-between;
+    display: flex;
+    gap: 0 1em;
+
     .fieldset {
         width: 45%;
     }
+}
+
+@media (max-width:1080px) {
+    .DataSource {
+        flex-direction: column;
+        gap: 1em 0;
+        .fieldset {
+            width: 100%;
+        }
+    }
+
 }

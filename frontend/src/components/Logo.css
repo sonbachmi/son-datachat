@@ -1,0 +1,8 @@
+.Logo {
+    pointer-events: none;
+    /*color: #e79d6c;*/
+    color: white;
+    svg {
+        width: 100%;
+    }
+}

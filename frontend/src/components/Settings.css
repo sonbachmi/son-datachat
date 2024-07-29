@@ -1,3 +1,10 @@
 .Settings {
-    padding: .5em 1em;
+    padding: 1em 1em;
+    color: white !important;
+    .mantine-Select-description {
+        color: white !important;
+    }
+    .logo {
+        width: 80%;
+    }
 }

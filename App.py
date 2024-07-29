@@ -10,7 +10,7 @@ from main import create_session, set_model, set_data, get_chat_response
 
 st.set_page_config(
     page_title="Son's Data Chat",
-    page_icon='👋',
+    page_icon='assets/favicon-32x32.png',
     layout='wide',
     menu_items={'About': "### Data Chat Challenge Solution"},
 )
@@ -18,6 +18,12 @@ st.set_page_config(
 with open('./assets/app.css') as f:
     css = f.read()
 st.html(f'<style>{css}</style>')
+
+
+st.sidebar.image('assets/logo.png')
+st.sidebar.markdown('# Settings')
+
+st.title("Son's Data Chat")
 
 # Streamed response emulator
 def response_generator(answer):
@@ -38,9 +44,6 @@ def response_generator(answer):
     yield ''
 
 
-st.sidebar.markdown('# Settings')
-
-st.title("Son's Data Chat")
 
 if 'token' not in st.session_state:
     st.session_state.token = create_session(True)
