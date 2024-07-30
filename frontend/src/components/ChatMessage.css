@@ -8,6 +8,10 @@
         .avatar {
             order: 1;
         }
+
+        .text {
+            cursor: pointer
+        }
     }
 
     .text {

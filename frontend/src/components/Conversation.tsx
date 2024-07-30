@@ -27,6 +27,17 @@ function Conversation({selection}: { selection: DataSelection | null }) {
         inputRef.current?.focus()
     }, [lastMessageId])
 
+    const handleMessageClick = (id: number) => {
+        const message = messages.find(message => message.id === id)
+        if (message) {
+            setInput(message.message)
+            inputRef.current.focus()
+            inputRef.current.scrollIntoView({
+               behavior: 'smooth'
+            })
+        }
+    }
+
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setInput(e.currentTarget.value)
     }
@@ -73,7 +84,9 @@ function Conversation({selection}: { selection: DataSelection | null }) {
                     discussion is now limited to this set of data.
                 </Alert>
                 <div className="messages" key={lastMessageId}>
-                    {messages.map((message) => <ChatMessage key={message.id} message={message}/>)}
+                    {messages.map((message) =>
+                        <ChatMessage key={message.id} message={message} onMessageClick={handleMessageClick}/>)
+                    }
                 </div>
                 <form onSubmit={handleSend}>
                     <TextInput className='input' ref={inputRef}

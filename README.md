@@ -37,7 +37,7 @@ To run the server locally:
 ### Frontend Client
 
 Inside `frontend` is a modern **React Typescript** application acting as a client UI to connect with the engine via the REST API. The flow is similar to the _Streamlit_ app.
-Response formats of text, `DataFrame` and images are supported. Mobile view is minimally supported.
+Response formats of text, `DataFrame` and images are supported. Messages in history can be reused as prompt by clicking on them. Mobile view is minimally supported.
 
 A working copy is already deployed here, which connects to the hosted API server:
 
