@@ -19,7 +19,9 @@ load_dotenv()
 root_path = os.path.dirname(os.path.realpath(__file__))
 
 api = FastAPI()
-api.mount('/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static')
+api.mount(
+    '/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static'
+)
 
 api.add_middleware(
     CORSMiddleware,
@@ -78,8 +80,14 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse:
         for file in files:
             extension = os.path.splitext(file.filename)[1][1:].lower()
             if extension not in ['csv', 'xlsx']:
-                raise HTTPException(status_code=400, detail='Data file must be CSV or XLSX')
-            df = pd.read_csv(file.file) if extension == 'csv' else pd.read_excel(file.file)
+                raise HTTPException(
+                    status_code=400, detail='Data file must be CSV or XLSX'
+                )
+            df = (
+                pd.read_csv(file.file)
+                if extension == 'csv'
+                else pd.read_excel(file.file)
+            )
             dfs.append(df)
             rows.append(len(df.index))
         session.set_data(dfs)
@@ -111,9 +119,9 @@ class QueryResponse(BaseModel):
 
 def generate_filename(extension: str) -> str:
     return (
-            ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
-            + '.'
-            + extension
+        ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+        + '.'
+        + extension
     )
 
 
@@ -137,7 +145,9 @@ def render_answer(answer) -> (str, str):
     t = type(answer)
     if t is str:
         if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
-            return str(f'<img src="{render_image(answer)}" alt="See image for answer">'), 'html'
+            return str(
+                f'<img src="{render_image(answer)}" alt="See image for answer">'
+            ), 'html'
     elif t is pd.DataFrame:
         return answer.to_html(), 'html'
     return str(answer)
@@ -150,7 +160,6 @@ async def post_query(query: QueryInput, token: str) -> QueryResponse:
         resp = session.get_chat_response(query.query)
         t = type(resp)
         answer, sformat = render_answer(resp)
-        # print('Returning answer:', str_answer)
         return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')
     except (ValueError, Exception):
         raise HTTPException(status_code=500, detail='System error')

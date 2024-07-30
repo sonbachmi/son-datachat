@@ -84,14 +84,19 @@ class Session:
         return {
             'llm': self.openAiLLM if self.model == ModelName.openai else self.bambooLLM,
             'response_parser': StreamlitResponse if self.use_streamlit else None,
-            "save_charts": True,
-            "save_charts_path": os.path.join(os.getcwd(), 'public'),
+            'save_charts': True,
+            'save_charts_path': os.path.join(os.getcwd(), 'public'),
         }
 
     def set_model(self, model: ModelName):
         self.model = model
-        if self.df and self.agent:
-            self.agent = Agent(self.df, self.get_config(), security=pandasAISecurity if security else None, memory_size=10)
+        if self.df is not None and self.agent:
+            self.agent = Agent(
+                self.df,
+                self.get_config(),
+                security=pandasAISecurity if security else None,
+                memory_size=10,
+            )
 
     def set_data(self, dfs: list[pd.DataFrame]):
         if not len(dfs):
@@ -104,7 +109,12 @@ class Session:
             raise Exception('Selecting data out of range')
         df = self.datasets[index]
         self.df = df if not head else df.head(head)
-        self.agent = Agent(self.df, self.get_config(), security=pandasAISecurity if security else None, memory_size=10)
+        self.agent = Agent(
+            self.df,
+            self.get_config(),
+            security=pandasAISecurity if security else None,
+            memory_size=10,
+        )
 
     def get_chat_response(self, query: str):
         # with get_openai_callback() as cb:

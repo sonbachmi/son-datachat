@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="Son's Data Chat",
     page_icon='assets/favicon-32x32.png',
     layout='wide',
-    menu_items={'About': "### Data Chat Challenge Solution"},
+    menu_items={'About': '### Data Chat Challenge Solution'},
 )
 
 with open('./assets/app.css') as f:
@@ -25,6 +25,7 @@ st.sidebar.image('assets/logo.png')
 st.sidebar.markdown('## Settings')
 
 st.title("Son's Data Chat")
+
 
 # Streamed response emulator
 def response_generator(answer):
@@ -45,7 +46,6 @@ def response_generator(answer):
     yield ''
 
 
-
 if 'token' not in st.session_state:
     st.session_state.token = create_session(True)
 token = st.session_state.token
@@ -57,7 +57,11 @@ def on_model_change():
     print('Switched model to:', model)
     st.toast(f'Model switched to {model}', icon=':material/check_circle:')
 
-llm = st.sidebar.selectbox('Use LLM', ['BambooLLM', 'OpenAI'], index=1, key='model', on_change=on_model_change)
+
+llm = st.sidebar.selectbox(
+    'Use LLM', ['BambooLLM', 'OpenAI'], index=1, key='model', on_change=on_model_change
+)
+
 
 # Nice to cache the file by hashing file name and size, good for developent
 # In production or in case of open file conflicts may need better hashing
@@ -66,6 +70,7 @@ def get_data(f):
     extension = os.path.splitext(f.name)[1][1:].lower()
     df = pd.read_csv(f) if extension == 'csv' else pd.read_excel(f)
     return df
+
 
 # Store number of uploaded files in state
 num_files = len(st.session_state.files) if 'files' in st.session_state else 0
@@ -84,7 +89,8 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
         num_files = len(files)
         one_file = num_files == 1
         selected_index = (
-            0 if one_file
+            0
+            if one_file
             else st.selectbox(
                 'Select file',
                 range(num_files),
@@ -116,7 +122,7 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
         set_data([df], token)
 
 
-def write_response(answer, fresh = False):
+def write_response(answer, fresh=False):
     if isinstance(answer, str):
         # if answer.lower().endswith('.png') or answer.lower().endswith('.jpg'):
         if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
@@ -129,7 +135,6 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
     if not num_files:
         st.warning('Please select data source first.')
     else:
-
         # Initialize chat history
         if 'messages' not in st.session_state:
             st.session_state.messages = []
@@ -139,13 +144,10 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
         # Display chat messages from history on app rerun
         for message in st.session_state.messages:
             with messages.chat_message(message['role']):
-                if (message['role'] == 'iser'):
+                if message['role'] == 'iser':
                     st.write(message['content'])
                 else:
-                    if False and 'image' in message:
-                        st.image(message['image'])
-                    else:
-                        write_response(message['content'])
+                    write_response(message['content'])
         # Add last assistant response in queue to display and history
         if 'last_answer' in st.session_state:
             last_answer = st.session_state.last_answer

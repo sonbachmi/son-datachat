@@ -31,12 +31,12 @@ separate apps for the two tiers:
 To run the server locally:
 - Create and activate your virtual env
 - Create `.env` file from `.env.example` (replacing the existing file as it is used for production), modify if desired
-- `pip install -r requirents.txt`
+- `pip install -r requirements.txt`
 - `fastapi dev server.py`
 
 ### Frontend Client
 
-Inside `frontend` is a modern **React Typescript** application acting as a client UI to connect with the engine via the REST API. The flow is similar to the _Streamlit_ app.
+Inside `frontend` is a modern **React TypeScript** application acting as a client UI to connect with the engine via the REST API. The flow is similar to the _Streamlit_ app.
 Response formats of text, `DataFrame` and images are supported. Messages in history can be reused as prompt by clicking on them. Mobile view is minimally supported.
 
 A working copy is already deployed here, which connects to the hosted API server:
@@ -54,11 +54,11 @@ To provide API for the app, you also need to run a local version of the _Fastapi
 Or you can just use the existing public server by changing the URL in the `.env`, or copy from `env.production`.
 
 Feel free to review the running demos and the source code. Documentation is made where useful in the code to help follow my thought process while developing.
-The `git` history may also help on that.
+The `git` history may also help on observing project progression.
 
 ## Security
 
-This project is assumed to focus on LLM security. A few measures are implemented to improve security on both input and output
+This assigment is assumed to focus on LLM security. A few measures are implemented to improve security on both input and output
 using the **LLM Guard** library for demonstration purpose:
 
 - Input (prompt) from user is scanned for toxic content, sensible data, malicious injection and other unsafe content, then sanitized
@@ -68,7 +68,7 @@ Another measure specific to _PandasAI_ is using the _Advanced Security Agent_ to
 
 Those measures can provide a fair security layer to protect general applications, but may add to response time; and the Advanced Security Agent
 feature may potentially require license. So for this project, they are turned off by default by a switch in source code. Also, LLM Guard has 
-dependency problem on production so for now all related code has been commented out.
+dependency problem on production so for now all related code and test has been commented out.
 
 ## Tests
 
