@@ -1,27 +1,18 @@
-import {useState} from 'react'
 import {useDisclosure} from '@mantine/hooks'
-import {Accordion, AppShell, Burger, MantineProvider, Stack} from '@mantine/core'
-import {IconDatabaseExport, IconMessageChatbot} from '@tabler/icons-react'
-
-import {useSession} from './hooks/fetch.ts'
-import {DataSelection} from './models/selection.ts'
+import {Alert, AppShell, Burger, MantineProvider} from '@mantine/core'
+import {IconInfoCircle} from '@tabler/icons-react'
+import {ErrorBoundary} from 'react-error-boundary'
 
 import Header from './components/Header.tsx'
 import Settings from './components/Settings.tsx'
-import DataSource from './components/DataSource'
-import Conversation from './components/Conversation.tsx'
+import Main from './components/Main.tsx'
 
 import './App.css'
-
-const iconData = <IconDatabaseExport/>
-const iconChat = <IconMessageChatbot/>
+import {logError} from './hooks/error.ts'
+import ErrorFallback from './components/ErrorFallback.tsx'
 
 function App() {
     const [opened, {toggle}] = useDisclosure()
-    /*const session = */
-    useSession()
-    const [byDefault, setByDefault] = useState<boolean>(true)
-    const [selection, setSelection] = useState<DataSelection | null>(null)
 
     return (
         <MantineProvider>
@@ -33,8 +24,7 @@ function App() {
                         breakpoint: 'sm',
                         collapsed: {mobile: !opened},
                     }}
-                    padding="md"
-                >
+                    padding="md">
                     <AppShell.Header>
                         <Burger
                             opened={opened}
@@ -49,28 +39,16 @@ function App() {
                         <Settings/>
                     </AppShell.Navbar>
 
-                    <AppShell.Main>
-                        <div className="main">
-                            <Accordion multiple defaultValue={['datasource', 'conversation']}>
-                                <Accordion.Item key="datasource" value="datasource">
-                                    <Accordion.Control icon={iconData}>Data Source</Accordion.Control>
-                                    <Accordion.Panel>
-                                        <DataSource byDefault={byDefault} clearByDefault={() => setByDefault(false)}
-                                                    setSelection={setSelection}/>
-                                    </Accordion.Panel>
-                                </Accordion.Item>
-                                <Accordion.Item key="conversation" value="conversation">
-                                    <Accordion.Control icon={iconChat}>Conversation</Accordion.Control>
-                                    <Accordion.Panel>
-                                        <Stack>
-                                            <Conversation selection={selection}/>
-                                        </Stack>
-                                    </Accordion.Panel>
-                                </Accordion.Item>
-                            </Accordion>
-                        </div>
+                    <AppShell.Main className="main">
+                        <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}
+                                       onReset={(details) => {
+                                           // Reset the state of your app so the error doesn't happen again
+                                       }}>
+                            <Main/>
+                        </ErrorBoundary>
                     </AppShell.Main>
                 </AppShell>
+
             </div>
         </MantineProvider>
     )

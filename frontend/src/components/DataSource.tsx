@@ -1,9 +1,9 @@
 import {FC, FormEvent, useState} from 'react'
 
-import {Alert, Button, Fieldset, FileInput, NumberInput, rem, Select, Stack} from '@mantine/core'
-import {IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
+import {Alert, Button, Fieldset, FileInput, Loader, Notification, NumberInput, rem, Select, Stack} from '@mantine/core'
+import {IconExclamationCircle, IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
 
-import {postData, postFormData} from '../hooks/fetch.ts'
+import {postFormData, useFetch} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
 
 import './DataSource.css'
@@ -18,12 +18,10 @@ interface UploadedFile {
 }
 
 interface Props {
-    byDefault: boolean,
-    clearByDefault: () => void,
     setSelection: (selection: DataSelection | null) => void;
 }
 
-const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
+const DataSource: FC<Props> = ({setSelection}) => {
     const [files, setFiles] = useState<File[]>([])
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
@@ -39,20 +37,25 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
         setIndex(index.toString())
         setMax(f.rows)
         setHead(f.rows)
-        setDirty(false)
-        clearByDefault()
         setSelection({
             filename: f.label,
-            head: f.rows
+            head: f.rows,
+            committed: false
         })
     }
+    const [fetching, setFetching] = useState<boolean>(false)
+    const [error, setError] = useState<Error>(null)
+    // const {showBoundary} = useErrorBoundary()
+
     const upload = async () => {
+        setError(null)
         const formData = new FormData()
         for (const file of files) {
             formData.append('files', file)
         }
+        setFetching(true)
         try {
-            const data = await postFormData<{ rows: number[] }>('/data/input', formData)
+            const data = await postFormData('/data/input', formData)
             if (data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
             const upFiles = files.map(((file, index) => {
@@ -65,12 +68,14 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
             selectFile(0, upFiles)
             setUploadedFiles(upFiles)
         } catch (error) {
-            console.error(error)
+            setError(error)
+            // showBoundary(error)
+        } finally {
+            setFetching(false)
         }
-
     }
 
-    const [dirty, setDirty] = useState<boolean>(false)
+    const [dirty, setDirty] = useState<boolean>(true)
     const [index, setIndex] = useState<string | null>('0')
     const onIndexChange = (value: string | null) => {
         if (value != null) {
@@ -84,25 +89,24 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
         setHead(value)
         setDirty(true)
     }
+    const [, fetchingSelect, errorSelect, doFetch] = useFetch('/data/select', {})
     const applySelection = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (index == null) return
-        setDirty(false)
-        const f = uploadedFiles[+index]
-        setSelection({
-            filename: f.label,
-            head: +head
-        })
-        try {
-            await postData('/data/select', null, {
-                params: {
-                    index: index,
-                    head: head
-                }
+        doFetch({
+            params: {
+                index: index,
+                head: head
+            }
+        }).then(() => {
+            const f = uploadedFiles[+index]
+            setSelection({
+                filename: f.label,
+                head: +head,
+                committed: true
             })
-        } catch (error) {
-            console.error(error)
-        }
+            setDirty(!!errorSelect)
+        })
     }
 
     return (
@@ -117,8 +121,11 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
                                label={verb + ' one or more files'}
                                description="CSV or XLSX format only"
                                placeholder="Choose files"/>
-
                     <Button disabled={!files.length} onClick={upload}>{verb}</Button>
+                    {fetching && <Loader color="blue"/>}
+                    {error && <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
+                                            color="orange" mt="md">
+                        There was a problem uploading files: {error.message}</Notification>}
                 </Stack>
             </Fieldset>
             <Fieldset legend="Data Selector" className="fieldset">
@@ -144,10 +151,16 @@ const DataSource: FC<Props> = ({clearByDefault, setSelection}) => {
                             />
 
                             <Button type="submit" disabled={!dirty}>Apply Selection</Button>
+
+                            {fetchingSelect && <Loader color="blue"/>}
+                            {errorSelect && <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
+                                                          color="orange" mt="md">
+                                There was a problem submitting selection: {errorSelect.message}</Notification>}
                         </Stack>
                     </form>}
             </Fieldset>
-    </div>
-    )}
+        </div>
+    )
+}
 
 export default DataSource

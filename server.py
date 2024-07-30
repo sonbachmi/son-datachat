@@ -5,12 +5,12 @@ import string
 from pathlib import Path
 
 import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import streamlit as st
 
 from main import create_session, get_session_by_token, Session, ModelName
 
@@ -19,9 +19,6 @@ load_dotenv()
 root_path = os.path.dirname(os.path.realpath(__file__))
 
 api = FastAPI()
-api.mount(
-    '/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static'
-)
 
 api.add_middleware(
     CORSMiddleware,
@@ -30,6 +27,16 @@ api.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+api.mount(
+    '/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static'
+)
+
+# @api.middleware("http")
+# async def middleware(request: Request, call_next):
+#     response: Response = await call_next(request)
+#     print('Response', vars(response))
+#     return response
 
 
 @api.get('/')
@@ -92,8 +99,8 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse:
             rows.append(len(df.index))
         session.set_data(dfs)
         return UploadResponse(rows=rows, selectedIndex=0)
-    except (IOError, Exception):
-        raise HTTPException(status_code=500, detail='System error')
+    except (IOError, Exception) as e:
+        raise HTTPException(status_code=500, detail=repr(e))
 
 
 class SetDataResponse(BaseModel):
@@ -119,9 +126,9 @@ class QueryResponse(BaseModel):
 
 def generate_filename(extension: str) -> str:
     return (
-        ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
-        + '.'
-        + extension
+            ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+            + '.'
+            + extension
     )
 
 
@@ -150,7 +157,7 @@ def render_answer(answer) -> (str, str):
             ), 'html'
     elif t is pd.DataFrame:
         return answer.to_html(), 'html'
-    return str(answer)
+    return str(answer), 'text'
 
 
 @api.post('/query')
@@ -161,5 +168,6 @@ async def post_query(query: QueryInput, token: str) -> QueryResponse:
         t = type(resp)
         answer, sformat = render_answer(resp)
         return QueryResponse(answer=answer, type=t.__name__, html=sformat == 'html')
-    except (ValueError, Exception):
-        raise HTTPException(status_code=500, detail='System error')
+    except (ValueError, Exception) as e:
+        print('Query response error', e)
+        raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')

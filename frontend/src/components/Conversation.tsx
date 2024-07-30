@@ -1,9 +1,9 @@
 import {ChangeEvent, FormEvent, useEffect, useRef, useState} from 'react'
 import {ActionIcon, Alert, Stack, TextInput} from '@mantine/core'
-import {IconInfoCircle, IconMessage, IconSend} from '@tabler/icons-react'
+import {IconAlertCircle, IconInfoCircle, IconMessage, IconSend} from '@tabler/icons-react'
 
 import {DataSelection} from '../models/selection.ts'
-import {ChatResponse, Message} from '../models/conversation.ts'
+import {Message} from '../models/conversation.ts'
 import {postData} from '../hooks/fetch.ts'
 import ChatMessage from './ChatMessage.tsx'
 
@@ -20,6 +20,7 @@ const messages: Message[] = [
 function Conversation({selection}: { selection: DataSelection | null }) {
     const [input, setInput] = useState<string>('')
     const [fetching, setFetching] = useState<boolean>(false)
+    const [error, setError] = useState<boolean>(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
     const lastMessageId = messages[messages.length - 1].id
@@ -33,17 +34,22 @@ function Conversation({selection}: { selection: DataSelection | null }) {
             setInput(message.message)
             inputRef.current.focus()
             inputRef.current.scrollIntoView({
-               behavior: 'smooth'
+                behavior: 'smooth'
             })
         }
     }
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setError(false)
         setInput(e.currentTarget.value)
+    }
+    const clearIndicator = () => {
+        messages.splice(-1)
     }
     const handleSend = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setInput('')
+        setError(false)
         messages.push({
                 id: ++id,
                 role: 'user',
@@ -57,7 +63,7 @@ function Conversation({selection}: { selection: DataSelection | null }) {
             })
         setFetching(true)
         try {
-            const data = await postData<ChatResponse>('/query', {
+            const data = await postData('/query', {
                 query: input
             })
             // console.log(data)
@@ -67,15 +73,17 @@ function Conversation({selection}: { selection: DataSelection | null }) {
             message.type = data.html ? 'html' : 'text'
         } catch (error) {
             console.error(error)
+            setError(true)
+            clearIndicator()
         } finally {
             setFetching(false)
         }
     }
     return <div className="Conversation">
-        {!selection ?
+        {!selection?.committed ?
             <Alert variant="light" color="orange" title="Data selection required"
                    icon={<IconInfoCircle/>}>
-                Please select data to feed to this conversation
+                Please complete selecting data to feed to this conversation.
             </Alert> :
             <Stack>
                 <Alert variant="light" color="blue" title="Data selection applied"
@@ -88,6 +96,10 @@ function Conversation({selection}: { selection: DataSelection | null }) {
                         <ChatMessage key={message.id} message={message} onMessageClick={handleMessageClick}/>)
                     }
                 </div>
+                {error && <Alert variant="light" color="orange" title="Query error"
+                                 icon={<IconAlertCircle/>}>
+                    Oops! There was an error processing your query. Please check again, retry or rephrase.
+                </Alert>}
                 <form onSubmit={handleSend}>
                     <TextInput className='input' ref={inputRef}
                                leftSectionPointerEvents="none"

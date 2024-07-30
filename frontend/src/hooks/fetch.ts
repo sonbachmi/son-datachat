@@ -1,4 +1,5 @@
-import {useEffect, useState} from 'react'
+import {useCallback, useEffect, useState} from 'react'
+import {useErrorBoundary} from 'react-error-boundary'
 
 import {Session} from '../models/session.ts'
 
@@ -6,11 +7,34 @@ const apiUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'
 
 let session: Session | null = null
 
-export interface fetchOptions {
+export interface FetchOptions {
     params?: Record<string, string | number>
 }
 
-export function postData<T>(path: string, data?: unknown | null, options?: fetchOptions): Promise<T> {
+// interface ApiErrorResponse {
+//     detail: string
+// }
+function handleError(error: Error) {
+    // console.error(error)
+    return Promise.reject(error instanceof TypeError ? new TypeError('Cannot connect to server') : error)
+}
+
+function jsonOrError(response: Response) {
+    if (!response.ok) {
+        if (response.status === 403)
+            return Promise.reject(new Error('Invalid session'))
+    }
+    return response.json()
+        .then((json) => {
+            if (!response.ok && 'detail' in json) {
+                const detail = (typeof json.detail === 'string' ? json.detail : JSON.stringify(json.detail))
+                return Promise.reject(new Error('API error: ' + detail))
+            }
+            return json
+        })
+}
+
+export function postData(path: string, data?: object | null, options?: FetchOptions) {
     const url = new URL(apiUrl + path)
     if (options?.params) {
         Object.entries(options.params).forEach(([name, value]) => {
@@ -27,20 +51,11 @@ export function postData<T>(path: string, data?: unknown | null, options?: fetch
         method: 'POST',
         headers,
         body: JSON.stringify(data)
-    }).then(response => {
-        if (!response.ok) {
-            if (response.status === 403)
-                return Promise.reject(new Error('Invalid session'))
-            return Promise.reject(new Error('Fetch error: ' + response.status))
-        }
-        return response.json()
-    }).catch(error => {
-        console.error(error)
-        return Promise.reject(new Error('API error: ' + error.message))
-    })
+    }).then(jsonOrError)
+        .catch(handleError)
 }
 
-export function postFormData<T>(path: string, data: FormData, options?: fetchOptions): Promise<T> {
+export function postFormData(path: string, data: FormData, options?: FetchOptions) {
     const url = new URL(apiUrl + path)
     if (options?.params) {
         Object.entries(options.params).forEach(([name, value]) => {
@@ -53,68 +68,59 @@ export function postFormData<T>(path: string, data: FormData, options?: fetchOpt
     return fetch(url.toString(), {
         method: 'POST',
         body: data
-    }).then(response => {
-        if (!response.ok) {
-            if (response.status === 403) {
-                // If invalid session, automatically create new session and retry
-                console.log('Expired session, attempting new')
-                return create_session().then(() =>
-                    fetch(url.toString(), {
-                        method: 'POST',
-                        body: data
-                    }).then(response => {
-                        if (!response.ok) {
-                            if (response.status === 403) {
-                                return Promise.reject(new Error('Invalid session after 1 retry'))
-                            }
-                            return Promise.reject(new Error('Fetch error: ' + response.status))
-                        }
-                        return response.json()
-                    }))
+    }).then(jsonOrError).catch(handleError)
+}
+
+export function useFetch(path: string, data?: object | FormData, options?: FetchOptions) {
+    const [value, setValue] = useState(null)
+    const [fetching, setFetching] = useState<boolean>(false)
+    const [error, setError] = useState<Error>(null)
+    // const {showBoundary} = useErrorBoundary()
+
+    const doFetch = useCallback((_options: FetchOptions = options) => {
+            const url = new URL(apiUrl + path)
+            if (session) {
+                url.searchParams.append('token', session.token)
             }
-            return Promise.reject(new Error('Fetch error: ' + response.status))
+        if (_options?.params) {
+            Object.entries(_options.params).forEach(([name, value]) => {
+                url.searchParams.append(name, value.toString())
+            })
         }
-        return response.json()
-    })
-}
-
-export function create_session() {
-    return postData<Session>('/session').then((new_session: Session) => {
-        session = new_session
-        return new_session
-    })
-}
-
-export function useFetch<T>(path: string, method = 'GET', data?: unknown) {
-    const [value, setValue] = useState<T | null>(null)
-    const url = new URL(apiUrl + path)
-    if (session) {
-        url.searchParams.append('token', session.token)
-    }
-    useEffect(() => {
-        let ignore = false
-        fetch(url.toString(), {
-            method,
-            headers: data ? {'Content-Type': 'application/json'} : undefined
-        }).then(response => {
-            if (!response.ok) {
-                if (response.status === 403)
-                    return Promise.reject(new Error('Invalid session'))
-                return Promise.reject(new Error('Fetch error: ' + response.status))
-            }
-            return response.json()
-        }).then(data => {
-            if (!ignore) setValue(data)
+        setError(null)
+        setFetching(true)
+        return fetch(url.toString(), data == null ?
+            {method: 'GET'}
+            : {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: data instanceof FormData ? data : JSON.stringify(data)
+            }).then(jsonOrError).then(json => {
+            setValue(json)
+            return json
+        }).catch(error => {
+            // showBoundary(
+            //     error instanceof TypeError ? new TypeError('Cannot connect to server') : error)
+            setError(error instanceof TypeError ? new TypeError('Cannot connect to server') : error)
         })
-        return () => {
-            ignore = true
-        }
-    }, [])
-    return value
+            .finally(() => setFetching(false))
+    }, [path, data, options])
+    return [value, fetching, error, doFetch]
 }
 
 export function useSession() {
-    session = useFetch<Session>('/session', 'POST')
-    return session
+    const [_session, setSession] = useState<Session>(null)
+    const {showBoundary} = useErrorBoundary()
+    useEffect(() => {
+        if (!session)
+            fetch(apiUrl + '/session', {method: 'POST'})
+                .then(jsonOrError)
+                .then(json => {
+                    setSession(json)
+                    session = json
+                }).catch(error => showBoundary(
+                error instanceof TypeError ? new TypeError('Cannot connect to server') : error))
+    }, [showBoundary])
+    return _session
 }
 
