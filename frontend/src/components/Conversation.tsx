@@ -5,6 +5,7 @@ import {IconAlertCircle, IconInfoCircle, IconMessage, IconSend} from '@tabler/ic
 import {DataSelection} from '../models/selection.ts'
 import {Message} from '../models/conversation.ts'
 import {postData} from '../hooks/fetch.ts'
+
 import ChatMessage from './ChatMessage.tsx'
 
 import './Conversation.css'
@@ -26,7 +27,7 @@ function Conversation({selection}: { selection: DataSelection | null }) {
     const lastMessageId = messages[messages.length - 1].id
     useEffect(() => {
         inputRef.current?.focus()
-    }, [lastMessageId])
+    }, [lastMessageId, selection?.committed])
 
     const handleMessageClick = (id: number) => {
         const message = messages.find(message => message.id === id)

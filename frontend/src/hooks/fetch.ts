@@ -8,12 +8,15 @@ const apiUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'
 let session: Session | null = null
 
 export interface FetchOptions {
-    params?: Record<string, string | number>
+    params?: {
+        [name: string]: string | number
+    }
 }
 
 // interface ApiErrorResponse {
 //     detail: string
 // }
+
 function handleError(error: Error) {
     // console.error(error)
     return Promise.reject(error instanceof TypeError ? new TypeError('Cannot connect to server') : error)
@@ -78,10 +81,10 @@ export function useFetch(path: string, data?: object | FormData, options?: Fetch
     // const {showBoundary} = useErrorBoundary()
 
     const doFetch = useCallback((_options: FetchOptions = options) => {
-            const url = new URL(apiUrl + path)
-            if (session) {
-                url.searchParams.append('token', session.token)
-            }
+        const url = new URL(apiUrl + path)
+        if (session) {
+            url.searchParams.append('token', session.token)
+        }
         if (_options?.params) {
             Object.entries(_options.params).forEach(([name, value]) => {
                 url.searchParams.append(name, value.toString())

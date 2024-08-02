@@ -6,15 +6,14 @@
 *.local
 .streamlit/secrets.toml
 
-#Personal dev config
+# Personal dev prefs
 pylintrc
 ruff.toml
 .Scripts
 
-#PandasAi
+# PandasAi
 /cache
 *.log
-/exports
 
 # Editor directories and files
 .vscode/*

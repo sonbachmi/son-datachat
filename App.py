@@ -1,3 +1,8 @@
+"""
+Streamlit app to serve frontend client to connect with the core LLM engine
+
+Usage: run with streamlit, no need for runtime API
+"""
 import os
 import random
 import re
@@ -16,19 +21,20 @@ st.set_page_config(
     menu_items={'About': '### Data Chat Challenge Solution'},
 )
 
+# Inject custom CSS
 with open('./assets/app.css') as f:
     css = f.read()
 st.html(f'<style>{css}</style>')
 
-
+# Display settings panel in sidebar
 st.sidebar.image('assets/logo.png')
 st.sidebar.markdown('## Settings')
 
 st.title("Son's Data Chat")
 
 
-# Streamed response emulator
 def response_generator(answer):
+    '''Streamed response emulator with animated typing effect, used by UI render'''
     answer = str(answer)
     # resp = random.choice(
     #     [
@@ -46,12 +52,14 @@ def response_generator(answer):
     yield ''
 
 
+# Maintain session token for stateful connection with core module
 if 'token' not in st.session_state:
-    st.session_state.token = create_session(True)
+    st.session_state.token = create_session(use_streamlit=True)
 token = st.session_state.token
 
 
 def on_model_change():
+    '''Handle model selection by selectbox.'''
     model = st.session_state.get('model', 'openai')
     set_model(model, token)
     print('Switched model to:', model)
@@ -63,7 +71,7 @@ llm = st.sidebar.selectbox(
 )
 
 
-# Nice to cache the file by hashing file name and size, good for developent
+# Nice to cache the file by hashing file name and size, good for development
 # In production or in case of open file conflicts may need better hashing
 # @st.cache_data(hash_funcs={'io.BytesIO': lambda f: f.name + len(f.getvalue())})
 def get_data(f):
@@ -71,12 +79,10 @@ def get_data(f):
     df = pd.read_csv(f) if extension == 'csv' else pd.read_excel(f)
     return df
 
-
-# Store number of uploaded files in state
-num_files = len(st.session_state.files) if 'files' in st.session_state else 0
-
+# Data Source panel
 with st.expander('**Data Source**', icon=':material/database:', expanded=True):
     st.subheader('📂 Input data')
+    # Upload file UI
     files = st.file_uploader(
         'Upload one or more data files (CSV/XLSX)',
         accept_multiple_files=True,
@@ -87,10 +93,10 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
         st.divider()
         st.subheader('✅ Select data')
         num_files = len(files)
-        one_file = num_files == 1
+        # If uploaded more than 1 file, display selectbox to select file
         selected_index = (
             0
-            if one_file
+            if num_files == 1
             else st.selectbox(
                 'Select file',
                 range(num_files),
@@ -119,10 +125,12 @@ with st.expander('**Data Source**', icon=':material/database:', expanded=True):
                 else f'Selected data contains first {nrows} rows only'
             )
             st.dataframe(df, hide_index=True)
+        # Submit data selection to core engine
         set_data([df], token)
 
 
 def write_response(answer, fresh=False):
+    '''Render LLM response based on format.'''
     if isinstance(answer, str):
         # if answer.lower().endswith('.png') or answer.lower().endswith('.jpg'):
         if re.search(r'\.(png|jpe?g)$', answer, re.IGNORECASE):
@@ -130,25 +138,25 @@ def write_response(answer, fresh=False):
         return st.write(response_generator(answer) if fresh else answer)
     return st.write(answer)
 
-
+# Conversation panel
 with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
-    if not num_files:
+    if not len(st.session_state.get('files', [])) :
         st.warning('Please select data source first.')
     else:
-        # Initialize chat history
+        # Initialize message list state
         if 'messages' not in st.session_state:
             st.session_state.messages = []
         messages = st.container()
 
         # Display message list
-        # Display chat messages from history on app rerun
+        # Retrieve message history from state
         for message in st.session_state.messages:
             with messages.chat_message(message['role']):
-                if message['role'] == 'iser':
+                if message['role'] == 'user':
                     st.write(message['content'])
                 else:
                     write_response(message['content'])
-        # Add last assistant response in queue to display and history
+        # Retrieve last LLM response from queue to display and store to history
         if 'last_answer' in st.session_state:
             last_answer = st.session_state.last_answer
             del st.session_state.last_answer
@@ -162,7 +170,12 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
             st.session_state.submitting = False
 
         def on_submit():
-            query = st.session_state.query
+            ''' Handle user prompt submission.
+
+                - Send query to core engine
+                - Receive response and store in queue for next rerun
+            '''
+            query = st.session_state.get('query')
             if query:
                 print('Submitting query:', query)
                 st.session_state.messages.append({'role': 'user', 'content': query})
@@ -175,7 +188,7 @@ with st.expander('**Conversation**', icon=':material/chat:', expanded=True):
                 st.session_state.last_answer = response
                 st.session_state.submitting = False
 
-        # React to user input
+        # Display prompt input
         prompt = st.chat_input(
             'Ask about the data source',
             key='query',

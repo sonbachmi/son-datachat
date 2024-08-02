@@ -1,3 +1,5 @@
+# Test REST API in JetBrain IDE
+
 ### GET request to FastAPI server
 GET http://localhost:8000
 
