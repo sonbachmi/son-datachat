@@ -13,25 +13,36 @@ import string
 from enum import Enum
 
 import pandas as pd
+import streamlit as st
 from dotenv import load_dotenv
 from pandasai import Agent
-from pandasai.ee.agents.advanced_security_agent import AdvancedSecurityAgent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
-import streamlit as st
 
 load_dotenv()
 
-skip_llm_guard = bool(st.secrets.get('SKIP_LLM_GUARD', False))
-if not skip_llm_guard:
-    from llm_guard import scan_prompt, scan_output
-    from llm_guard.input_scanners import Anonymize, PromptInjection, TokenLimit, Toxicity
-    from llm_guard.output_scanners import Deanonymize, NoRefusal, Relevance, Sensitive
-    from llm_guard.vault import Vault
 
-    vault = Vault()
-    input_scanners = [Anonymize(vault), Toxicity(), TokenLimit(), PromptInjection()]
-    output_scanners = [Deanonymize(vault), NoRefusal(), Relevance(), Sensitive()]
+# Security layer applied to conversation
+# Use LLM Guard to scan and sanitize text
+# Turn off by default.
+security = False
+
+# Only use PandasAI's Advanced Security Agent feature after license checking
+pandasAISecurity = None # AdvancedSecurityAgent() if Security else None
+
+# Initialize LLM Guard
+# Only use this after installing llm_guard and uncommenting related code here
+
+# skip_llm_guard = not security or bool(st.secrets.get('SKIP_LLM_GUARD', False))
+# if not skip_llm_guard:
+#     from llm_guard import scan_prompt, scan_output
+#     from llm_guard.input_scanners import Anonymize, PromptInjection, TokenLimit, InvisibleText
+#     from llm_guard.output_scanners import Deanonymize, NoRefusal, Sensitive
+#     from llm_guard.vault import Vault
+#
+#     vault = Vault()
+#     input_scanners = [Anonymize(vault), TokenLimit(), PromptInjection(), InvisibleText()]
+#     output_scanners = [Deanonymize(vault), NoRefusal(), Sensitive()]
 
 
 class ModelName(str, Enum):
@@ -39,34 +50,34 @@ class ModelName(str, Enum):
     openai = 'openai'
 
 
-# Security layer applied to conversation
-# Use LLM Guard for sanitization
-security = False
-pandasAISecurity = AdvancedSecurityAgent()
-
-
 def sanitize_prompt(prompt: str):
     """Scan prompt for security vulnerabilities and sanitize."""
-    if not security or skip_llm_guard:
-        return prompt
-    sanitized_prompt, results_valid, results_score = scan_prompt(input_scanners, prompt)
-    if any(results_valid.values()) is False:
-        print(f'Prompt {prompt} is not valid, scores: {results_score}')
-        raise Exception('Prompt is unsafe')
-    return sanitized_prompt
+    return prompt
+    # Only use LLM Guard when security enabled
+    # if not security or skip_llm_guard:
+    #     return prompt
+    # sanitized_prompt, results_valid, results_score = scan_prompt(input_scanners, prompt)
+    # if not all(list(results_valid.values())[1:]):
+    #     print('Encountered unsafe prompt')
+    #     print(f'{prompt=}\n{results_score=}\n')
+    #     raise ValueError('Unsafe prompt')
+    # return sanitized_prompt
 
 
 def sanitize_output(sanitized_prompt: str, response_text: str):
     """Scan LLM response for security vulnerabilities and sanitize."""
-    if not security or skip_llm_guard:
-        return response_text
-    sanitized_response_text, results_valid, results_score = scan_output(
-        output_scanners, sanitized_prompt, response_text
-    )
-    if any(results_valid.values()) is False:
-        print(f'Output {response_text} is not valid, scores: {results_score}')
-        raise Exception('Response is unsafe')
-    return sanitized_response_text
+    return response_text
+    # Only use LLM Guard when security enabled
+    # if not security or skip_llm_guard:
+    #     return response_text
+    # sanitized_response_text, results_valid, results_score = scan_output(
+    #     output_scanners, sanitized_prompt, response_text
+    # )
+    # if any(results_valid.values()) is False:
+    #     print('Encountered unsafe output\n')
+    #     print(f'{response_text=}\n{results_score=}\n')
+    #     raise ValueError('Unsafe response')
+    # return sanitized_response_text
 
 
 def generate_token():
@@ -106,7 +117,7 @@ class Session:
             if self.model == ModelName.openai
             else Session.bambooLLM,
             'response_parser': StreamlitResponse if self.use_streamlit else None,
-            'open_chars': False,
+            'open_charts': False,
             'save_charts': True,
             'save_charts_path': os.path.join(os.getcwd(), 'public'),
         }
@@ -122,7 +133,7 @@ class Session:
             self.agent = Agent(
                 self.df,
                 self.get_config(),
-                security=pandasAISecurity if security else None,
+                security=pandasAISecurity,
                 memory_size=10,
             )
 
@@ -151,7 +162,7 @@ class Session:
         self.agent = Agent(
             self.df,
             self.get_config(),
-            security=pandasAISecurity if security else None,
+            security=pandasAISecurity,
             memory_size=10,
         )
 
@@ -169,12 +180,16 @@ class Session:
         #     print("Result:", cb)
         if not self.agent:
             raise Exception('No agent initialized')
-        sanitized_query = sanitize_prompt(query)
+        try:
+            sanitized_query = sanitize_prompt(query)
+        except ValueError:
+            return 'Your question is deemed unsafe. Please reformulate properly and try again.'
         response = self.agent.chat(sanitized_query)
         if not isinstance(response, str):
             return response
         return sanitize_output(sanitized_query, response)
 
+# End class Session
 
 # List of sessions to maintain states with individual clients
 # For simplicity, this is stored in memory and will be lost on module rerun
@@ -203,7 +218,10 @@ def create_session(use_streamlit=False):
 
 def get_session_by_token(token: str):
     """Internal function to get the session based on client submitted token."""
-    return next((s for s in sessions if s.token == token), None)
+    session = next((s for s in sessions if s.token == token), None)
+    if not session:
+        raise Exception('Expired session. Try refreshing page')
+    return session
 
 
 def set_model(name: str, token: str):
@@ -214,7 +232,7 @@ def set_model(name: str, token: str):
     model = ModelName.openai if name == 'openai' else ModelName.bamboo
     session = get_session_by_token(token)
     session.set_model(model)
-
+7
 
 def set_data(dfs: list[pd.DataFrame], token: str):
     """ Change current dataset

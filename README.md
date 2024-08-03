@@ -69,20 +69,23 @@ The `git` history may also help on observing project progression.
 This assigment is assumed to focus on LLM security. A few measures are implemented to improve security on both input and output
 using the **LLM Guard** library for demonstration purpose:
 
-- Input (prompt) from user is scanned for toxic content, sensible data, malicious injection and other unsafe content, then sanitized
+- Input (prompt) from user is scanned for sensible data, token abuse, prompt injection and other unsafe content, then sanitized
 - Output (response) from LLM is also scanned and sanitized before reaching user
 
-Another measure specific to _PandasAI_ is using the _Advanced Security Agent_ to detect malicious code generation.
+Another measure specific to _PandasAI_ is using the _Advanced Security Agent_ to detect malicious code generation. 
 
-Those measures can provide a fair security layer to protect general applications, but may add some latency to response time;
-and the _Advanced Security Agent_ feature may potentially require a license. 
-So for this project, they are turned off by default by a switch in source code.
-In real production use, when it is preferably enabled, it is important to implement the optimal configuration, possibly adding
-more security measures provided by other libraries to the layer.
+Those defensive measures can provide a fair security layer to protect general applications, but may add some latency to response time.
+Also, _LLM Guard_ requires significant computing resources, and _Advanced Security Agent_
+may potentially require a license so the layer is turned off by default by a switch in source code.
+In real production use, you may prefer to enable it,
+but it is important to work out the optimal configuration for the scanners, and possibly add
+more security measures provided by other libraries to the layer. 
+(_LLM Guard_ is my personal first choice here as it's open source, provides a comprehensive toolkit,
+and requires no license or API key, free or paid, so can start working immediately out of the box.)
 
 ## Tests
 
-Unit tests for all Python apps are in the `tests` folder.
+Unit tests for all Python apps, including security scanners, are in the `tests` folder.
 Make sure the tests run in the project root directory, with no local server open.
 
 ~~~bash
