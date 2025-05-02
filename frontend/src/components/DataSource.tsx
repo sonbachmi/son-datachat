@@ -40,7 +40,8 @@ const DataSource: FC<Props> = ({setSelection}) => {
         setSelection({
             filename: f.label,
             head: f.rows,
-            committed: false
+            committed: false,
+            transcribe: false
         })
     }
     const [fetching, setFetching] = useState<boolean>(false)
@@ -103,7 +104,8 @@ const DataSource: FC<Props> = ({setSelection}) => {
             setSelection({
                 filename: f.label,
                 head: +head,
-                committed: true
+                committed: true,
+                transcribe: false
             })
             setDirty(!!errorSelect)
         })
@@ -119,7 +121,7 @@ const DataSource: FC<Props> = ({setSelection}) => {
                                size="md" inputSize="lg"
                                leftSection={icon}
                                label={verb + ' one or more files'}
-                               description="CSV or XLSX format only"
+                               description="Datasheet (CSV, XLSX) or media (WAV, MP3, MP4, MPEG, WEBM)"
                                placeholder="Choose files"/>
                     <Button disabled={!files.length} onClick={upload}>{verb}</Button>
                     {fetching && <Loader color="blue"/>}
@@ -131,7 +133,7 @@ const DataSource: FC<Props> = ({setSelection}) => {
             <Fieldset legend="Data Selector" className="fieldset">
                 {!uploadedFiles.length ?
                     <Alert variant="light" color="orange" title="Data input required" icon={<IconInfoCircle/>}>
-                        Please upload data for selection
+                        Please upload file for analysis
                     </Alert>
                     : <form onSubmit={applySelection}>
                         <Stack>

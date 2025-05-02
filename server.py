@@ -48,6 +48,9 @@ api.add_middleware(
 api.mount(
     '/public', StaticFiles(directory=os.path.join(root_path, 'public')), name='static'
 )
+api.mount(
+    '/media', StaticFiles(directory=os.path.join(root_path, 'media')), name='media'
+)
 
 
 # @api.middleware("http")

@@ -37,6 +37,18 @@ function jsonOrError(response: Response) {
         })
 }
 
+export function getData(path: string) {
+    const url = new URL(apiUrl + path)
+    const headers = {
+        'Content-Type': 'application/json',
+    }
+    return fetch(url.toString(), {
+        method: 'POST',
+        headers,
+    }).then(jsonOrError)
+        .catch(handleError)
+}
+
 export function postData(path: string, data?: object | null, options?: FetchOptions) {
     const url = new URL(apiUrl + path)
     if (options?.params) {
