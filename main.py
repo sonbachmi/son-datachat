@@ -171,8 +171,8 @@ class Session:
             memory_size=10,
         )
 
-    def get_transcribe_response(self):
-        path = os.path.abspath("media/sprite-flight-360p.mp4")
+    def get_transcribe_response(self, path):
+        # path = os.path.abspath("data/sprite-flight.mp4")
         # audio_file = open("data/harvard.wav", "rb")
 
         result =  whisper_model.transcribe(path)

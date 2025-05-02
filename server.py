@@ -112,8 +112,13 @@ class UploadResponse(BaseModel):
     selectedIndex: int
 
 
+class MediaUploadResponse(BaseModel):
+    url: str
+    result: object
+
+
 @api.post('/data/input')
-async def upload_files(files: list[UploadFile], token: str) -> UploadResponse:
+async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | MediaUploadResponse:
     """Upload files as data input
 
     Upload files, read data from files and set it as current dataset
@@ -124,10 +129,19 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse:
     try:
         for file in files:
             extension = os.path.splitext(file.filename)[1][1:].lower()
-            if extension not in ['csv', 'xlsx']:
+            if extension not in ['csv', 'xlsx', 'mp3', 'wav', 'mp4', 'mpeg', 'webm']:
                 raise HTTPException(
-                    status_code=400, detail='Data file must be CSV or XLSX'
+                    status_code=400, detail='Input file must be datasheet or media'
                 )
+            if extension not in ['csv', 'xlsx']:
+                out_filename = generate_filename(extension)
+                out_path = f'{root_path}/media/{out_filename}'
+                with open(out_path, "wb+") as out_file:
+                    # shutil.copyfileobj(file.file, out_file)
+                    out_file.write(file.file.read())
+                public_url = f'{SERVER_URL}/media/{out_filename}'
+                result = session.get_transcribe_response(out_path)
+                return MediaUploadResponse(url=public_url, result=result)
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'
@@ -165,6 +179,7 @@ class QueryResponse(BaseModel):
     type: str
     html: bool
 
+
 class TranscribeResponse(BaseModel):
     result: object
 
@@ -181,15 +196,6 @@ def render_image(path):
     """Internal function to render image output from LLM as HTML img tag using the mounted URL."""
     file = Path(path)
     if file.is_file():
-        # try:
-        #     extension = os.path.splitext(file.name)[1][1:].lower()
-        #     out_filename = generate_filename(extension)
-        #     out_path = f'{root_path}/public/{out_filename}'
-        #     shutil.copy(path, out_path)
-        #     public_url = f'{st.secrets["SERVER_URL"] or os.environ["SERVER_URL"] or ""}/public/{out_filename}'
-        #     return public_url
-        # except (IOError, Exception):
-        #     return str(path)
         public_url = f'{SERVER_URL}/public/{file.name}'
         return public_url
 
@@ -212,7 +218,7 @@ async def get_transcribe() -> TranscribeResponse:
     session = new_session()
     try:
         result = session.get_transcribe_response()
-        return TranscribeResponse(result = result)
+        return TranscribeResponse(result=result)
     except (ValueError, Exception) as e:
         print('Transcribe error', e)
         raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')

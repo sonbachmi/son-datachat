@@ -13,11 +13,9 @@ import './Media.css'
 
 import {DataSelection} from '../models/selection.ts'
 
-const mediaUrl = (import.meta.env.VITE_SERVER_URL || 'http://localhost:8000') + '/media'
-
 function Media({selection}: { selection: DataSelection | null }) {
-    const fileName = 'harvard.wav'
-    // const fileName = 'sprite-flight-360p.mp4'
+    const isAudio = /\.(wav|mp3)$/i.test(selection?.filename)
+    const type = isAudio ? 'Audio' : 'Video'
     const [fetching, setFetching] = useState<boolean>(false)
     const fetchTranscribe = async (e: FormEvent<HTMLFormElement>) => {
         setFetching(true)
@@ -32,14 +30,14 @@ function Media({selection}: { selection: DataSelection | null }) {
     }
     return <div className="Media">
         <Stack>
-            <Alert variant="light" color="blue" title="Media transcribed"
+            <Alert variant="light" color="blue" title={`${type} transcribed`}
                    icon={<IconInfoCircle/>}>
                 Play with subtitles
             </Alert>
             <div className="player">
-                <MediaPlayer title="Transcribed Media" src={`${mediaUrl}/${fileName}`}>
+                <MediaPlayer title={`Transcribed ${type}`} src={selection?.url}>
                     <MediaProvider/>
-                    <DefaultAudioLayout icons={defaultLayoutIcons}/>
+                    <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
                     <DefaultVideoLayout icons={defaultLayoutIcons}/>
                 </MediaPlayer>
             </div>

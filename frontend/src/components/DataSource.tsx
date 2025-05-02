@@ -1,20 +1,22 @@
 import {FC, FormEvent, useState} from 'react'
 
 import {Alert, Button, Fieldset, FileInput, Loader, Notification, NumberInput, rem, Select, Stack} from '@mantine/core'
-import {IconExclamationCircle, IconFileCheck, IconFileTypeCsv, IconInfoCircle} from '@tabler/icons-react'
+import {IconExclamationCircle, IconFileCheck, IconFiles, IconInfoCircle} from '@tabler/icons-react'
 
 import {postFormData, useFetch} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
 
 import './DataSource.css'
 
-const icon = <IconFileTypeCsv style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
+const icon = <IconFiles style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
 const iconFile = <IconFileCheck/>
 
 interface UploadedFile {
     value: string
     label: string
-    rows: number
+    rows?: number
+    url?: string
+    result?: object
 }
 
 interface Props {
@@ -23,6 +25,7 @@ interface Props {
 
 const DataSource: FC<Props> = ({setSelection}) => {
     const [files, setFiles] = useState<File[]>([])
+    const [isMedia, setIsMedia] = useState(false)
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
     const onFilesChange = (files: File[]) => {
@@ -41,7 +44,7 @@ const DataSource: FC<Props> = ({setSelection}) => {
             filename: f.label,
             head: f.rows,
             committed: false,
-            transcribe: false
+            media: false
         })
     }
     const [fetching, setFetching] = useState<boolean>(false)
@@ -57,10 +60,16 @@ const DataSource: FC<Props> = ({setSelection}) => {
         setFetching(true)
         try {
             const data = await postFormData('/data/input', formData)
-            if (data.rows.length !== files.length)
+            const isMedia = !!data.result
+            if (!isMedia && data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
             const upFiles = files.map(((file, index) => {
-                return {
+                return isMedia ? {
+                    value: index.toString(),
+                    label: file.name,
+                    url: data.url,
+                    result: data.result
+                } : {
                     value: index.toString(),
                     label: file.name,
                     rows: data.rows[index]
@@ -68,7 +77,8 @@ const DataSource: FC<Props> = ({setSelection}) => {
             }))
             selectFile(0, upFiles)
             setUploadedFiles(upFiles)
-        } catch (error) {
+        } catch
+            (error) {
             setError(error)
             // showBoundary(error)
         } finally {
@@ -94,21 +104,35 @@ const DataSource: FC<Props> = ({setSelection}) => {
     const applySelection = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (index == null) return
-        doFetch({
-            params: {
-                index: index,
-                head: head
-            }
-        }).then(() => {
-            const f = uploadedFiles[+index]
+        const f = uploadedFiles[0]
+        const isMedia = !!f.result
+        setIsMedia(isMedia)
+        if (isMedia) {
+            console.log(f)
             setSelection({
                 filename: f.label,
-                head: +head,
-                committed: true,
-                transcribe: false
+                url: f.url,
+                result: f.result,
+                media: true
             })
-            setDirty(!!errorSelect)
-        })
+            setDirty(true)
+        } else {
+            doFetch({
+                params: {
+                    index: index,
+                    head: head
+                }
+            }).then(() => {
+                const f = uploadedFiles[+index]
+                setSelection({
+                    filename: f.label,
+                    head: +head,
+                    committed: true,
+                    media: false
+                })
+                setDirty(!!errorSelect)
+            })
+        }
     }
 
     return (
@@ -117,7 +141,7 @@ const DataSource: FC<Props> = ({setSelection}) => {
                 <Stack>
                     <FileInput multiple clearable
                                value={files} onChange={onFilesChange}
-                               accept="text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                               accept="text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,audio/wav,audio/mpeg,video/mpeg,video/mp4"
                                size="md" inputSize="lg"
                                leftSection={icon}
                                label={verb + ' one or more files'}
@@ -142,15 +166,16 @@ const DataSource: FC<Props> = ({setSelection}) => {
                                     description="Only feed data from this file"
                                     leftSection={iconFile} checkIconPosition="left"
                                     data={uploadedFiles} value={index} onChange={onIndexChange}/>
-
-                            <NumberInput
-                                label="Limit number of rows"
-                                description={`From total ${max}`}
-                                placeholder="Enter number"
-                                value={head} min={1} max={max}
-                                onChange={onHeadChange}
-                                size="md"
-                            />
+                            {!uploadedFiles[0].result &&
+                                <NumberInput
+                                    label="Limit number of rows"
+                                    description={`From total ${max}`}
+                                    placeholder="Enter number"
+                                    value={head} min={1} max={max}
+                                    onChange={onHeadChange}
+                                    size="md"
+                                />
+                            }
 
                             <Button type="submit" disabled={!dirty}>Apply Selection</Button>
 
