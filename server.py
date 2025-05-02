@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from main import create_session, get_session_by_token, Session, ModelName
+from main import create_session, new_session, get_session_by_token, Session, ModelName
 
 load_dotenv()
 
@@ -162,6 +162,9 @@ class QueryResponse(BaseModel):
     type: str
     html: bool
 
+class TranscribeResponse(BaseModel):
+    result: object
+
 
 def generate_filename(extension: str) -> str:
     return (
@@ -199,6 +202,17 @@ def render_answer(answer) -> (str, str):
     elif t is pd.DataFrame:
         return answer.to_html(), 'html'
     return str(answer), 'text'
+
+
+@api.get('/transcribe')
+async def get_transcribe() -> TranscribeResponse:
+    session = new_session()
+    try:
+        result = session.get_transcribe_response()
+        return TranscribeResponse(result = result)
+    except (ValueError, Exception) as e:
+        print('Transcribe error', e)
+        raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')
 
 
 @api.post('/query')

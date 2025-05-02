@@ -3,6 +3,9 @@
 ### GET request to FastAPI server
 GET http://localhost:8000
 
+### GET transcribe
+GET http://localhost:8000/transcribe
+
 ### Create session
 POST http://localhost:8000/session
 

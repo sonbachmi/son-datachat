@@ -1,5 +1,6 @@
 # Env
 .venv
+venv
 
 # Private
 #.env

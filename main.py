@@ -12,6 +12,9 @@ import random
 import string
 from enum import Enum
 
+from openai import OpenAI
+import whisper
+
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
@@ -21,6 +24,8 @@ from pandasai.responses.streamlit_response import StreamlitResponse
 
 load_dotenv()
 
+client = OpenAI()
+client.api_key = os.getenv('OPENAI_API_KEY')
 
 # Security layer applied to conversation
 # Use LLM Guard to scan and sanitize text
@@ -166,6 +171,19 @@ class Session:
             memory_size=10,
         )
 
+    def get_transcribe_response(self):
+        path = os.path.abspath("data/harvard.wav")
+        # audio_file = open("data/harvard.wav", "rb")
+        model = whisper.load_model("tiny")
+        result = model.transcribe(path)
+        return result
+        # transcription = client.audio.transcriptions.create(
+        #     model="whisper-1",
+        #     # model="gpt-4o-transcribe",
+        #     file=audio_file
+        # )
+        # return transcription.text
+
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled
 
@@ -214,6 +232,11 @@ def create_session(use_streamlit=False):
     sessions.append(session)
     print('Session created', session.token)
     return session.token
+
+def new_session():
+    """Internal function to get the session based on client submitted token."""
+    session = Session()
+    return session
 
 
 def get_session_by_token(token: str):

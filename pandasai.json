@@ -1,6 +1,7 @@
 {
   "//llm": "OpenAI",
   "//llm_options": {
-    "api_key": "sk-proj-pncI1UCH011az5ZaBMlGT3BlbkFJvHUB7kzSMX556nCROni1"
+    "//api_key": "sk-proj-pncI1UCH011az5ZaBMlGT3BlbkFJvHUB7kzSMX556nCROni1",
+    "api_key": "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"
   }
 }
