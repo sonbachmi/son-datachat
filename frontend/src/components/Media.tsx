@@ -1,10 +1,14 @@
-import {FormEvent, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {Alert, Stack} from '@mantine/core'
 import {IconInfoCircle} from '@tabler/icons-react'
-import {MediaPlayer, MediaProvider} from '@vidstack/react';
+import {
+    MediaPlayer,
+    MediaPlayerInstance,
+    type MediaPlayEvent,
+    type MediaPlayRequestEvent,
+    MediaProvider, MediaStartedEvent, MediaTimeUpdateEvent, MediaTimeUpdateEventDetail
+} from '@vidstack/react';
 import {DefaultAudioLayout, defaultLayoutIcons, DefaultVideoLayout} from '@vidstack/react/player/layouts/default';
-
-import {getData} from '../hooks/fetch.ts'
 
 import '@vidstack/react/player/styles/default/theme.css';
 import '@vidstack/react/player/styles/default/layouts/audio.css';
@@ -12,22 +16,64 @@ import '@vidstack/react/player/styles/default/layouts/video.css';
 import './Media.css'
 
 import {DataSelection} from '../models/selection.ts'
+import {getTextAtTime} from '../hooks/subtitling.ts'
 
 function Media({selection}: { selection: DataSelection | null }) {
+    const player = useRef<MediaPlayerInstance>(null)
     const isAudio = /\.(wav|mp3)$/i.test(selection?.filename)
     const type = isAudio ? 'Audio' : 'Video'
-    const [fetching, setFetching] = useState<boolean>(false)
-    const fetchTranscribe = async (e: FormEvent<HTMLFormElement>) => {
-        setFetching(true)
-        try {
-            const data = await getData('/transcribe')
-            console.log(data)
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setFetching(false)
-        }
+    const [started, setStarted] = useState(false)
+    const [text, setText] = useState<string>('')
+
+    // useEffect(() => {
+    //     // Access snapshot of player state.
+    //     // const { paused } = player.current!.state;
+    //     // Subscribe for updates without triggering renders.
+    //     return player.current!.subscribe(({started}) => {
+    //             if (started) {
+    //                 setStarted(true)
+    //                 const media = document.querySelector(isAudio ? 'audio' : 'video')
+    //                 media.addEventListener('timeupdate', () => {
+    //                     const currentText = getTextAtTime(media.currentTime, selection?.result)
+    //                     if (currentText !== text) {
+    //                         setText(currentText)
+    //                         // console.log(currentText)
+    //                     }
+    //                 })
+    //                 // player.current!.subscribe(({currentTime}) => {
+    //                 // })
+    //             }
+    //         }
+    //     )
+    // }, [player.current]);
+
+    function onStarted(nativeEvent: MediaStartedEvent) {
+        setStarted(true)
+        const media = document.querySelector(isAudio ? 'audio' : 'video')
+        media.addEventListener('timeupdate', () => {
+            const currentText = getTextAtTime(media.currentTime, selection?.result)
+            if (currentText !== text) {
+                setText(currentText)
+                // console.log(currentText)
+            }
+        })
     }
+
+    function onTimeUpdate(detail: MediaTimeUpdateEventDetail, nativeEvent: MediaTimeUpdateEvent) {
+        // console.log(detail, nativeEvent)
+    }
+
+    // 1. request was made
+    function onPlayRequest(nativeEvent: MediaPlayRequestEvent) {
+        // console.log('playrequest', nativeEvent);
+    }
+
+    // 2. request succeeded
+    function onPlay(nativeEvent: MediaPlayEvent) {
+        // request events are attached to media events
+        // console.log('play', nativeEvent);
+    }
+
     return <div className="Media">
         <Stack>
             <Alert variant="light" color="blue" title={`${type} transcribed`}
@@ -35,11 +81,18 @@ function Media({selection}: { selection: DataSelection | null }) {
                 Play with subtitles
             </Alert>
             <div className="player">
-                <MediaPlayer title={`Transcribed ${type}`} src={selection?.url}>
+                <MediaPlayer ref={player} title={`Transcribed ${type}`} src={selection?.url} crossOrigin={true}
+                             onStarted={onStarted} onPlay={onPlay} onMediaPlayRequest={onPlayRequest}
+                             onTimeUpdate={onTimeUpdate}>
                     <MediaProvider/>
                     <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
                     <DefaultVideoLayout icons={defaultLayoutIcons}/>
                 </MediaPlayer>
+                {started &&
+                    <div className="subtitle">
+                        {text}
+                    </div>
+                }
             </div>
         </Stack>
     </div>

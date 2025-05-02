@@ -25,7 +25,7 @@ from pandasai.responses.streamlit_response import StreamlitResponse
 load_dotenv()
 
 client = OpenAI()
-whisper_model = whisper.load_model("tiny")
+whisper_model = whisper.load_model("base")
 
 # Security layer applied to conversation
 # Use LLM Guard to scan and sanitize text
@@ -172,10 +172,14 @@ class Session:
         )
 
     def get_transcribe_response(self, path):
-        # path = os.path.abspath("data/sprite-flight.mp4")
-        # audio_file = open("data/harvard.wav", "rb")
-
-        result =  whisper_model.transcribe(path)
+        # audio = whisper.load_audio(path)
+        # audio = whisper.pad_or_trim(audio)
+        result = whisper_model.transcribe(path,
+            language="en",
+            # no_speech_threshold=0.4,
+            # verbose=True,
+            word_timestamps=True,
+            fp16=False)
         return result
         # transcription = client.audio.transcriptions.create(
         #     model="whisper-1",
