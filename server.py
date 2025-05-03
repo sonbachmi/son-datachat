@@ -52,6 +52,7 @@ api.mount(
     '/media', StaticFiles(directory=os.path.join(root_path, 'media')), name='media'
 )
 
+require_session = False
 
 # @api.middleware("http")
 # async def middleware(request: Request, call_next):
@@ -85,6 +86,8 @@ def create_api_session() -> SessionResponse:
 
 def get_session(token) -> Session:
     """Internal function to get the session associated with calling client."""
+    if not require_session:
+        return new_session()
     session = get_session_by_token(token)
     if session is None:
         raise HTTPException(status_code=403, detail='Invalid session')
@@ -114,7 +117,8 @@ class UploadResponse(BaseModel):
 
 class MediaUploadResponse(BaseModel):
     url: str
-    result: object
+    result: dict
+    info: object
     tokens: int
     estimated_cost: float
 
@@ -142,11 +146,11 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     # shutil.copyfileobj(file.file, out_file)
                     out_file.write(file.file.read())
                 public_url = f'{SERVER_URL}/media/{out_filename}'
-                result = session.get_transcribe_response(out_path)
-                tokens = sum(len(segment) for segment in result['segments'])
-                estimated_cost = tokens * 0.006
+                segments, info = session.get_transcribe_response(out_path)
+                tokens = sum(len(segment.tokens) for segment in segments)
+                estimated_cost = info.duration * 0.006
                 return MediaUploadResponse(
-                    url=public_url, result=result,
+                    url=public_url, result={'segments': segments}, info=info,
                     tokens=tokens, estimated_cost=round(estimated_cost, 0 if estimated_cost > 1 else 2))
             df = (
                 pd.read_csv(file.file)

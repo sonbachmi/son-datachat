@@ -9,4 +9,5 @@ export interface TranscribeSegment {
 
 export interface TranscribeResult {
     segments: TranscribeSegment[]
+    info?: object
 }

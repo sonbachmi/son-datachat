@@ -12,20 +12,27 @@ import random
 import string
 from enum import Enum
 
-from openai import OpenAI
-import whisper
-
 import pandas as pd
-import streamlit as st
+import whisper
 from dotenv import load_dotenv
+from faster_whisper import WhisperModel
 from pandasai import Agent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
 
 load_dotenv()
-
 client = OpenAI()
-whisper_model = whisper.load_model("turbo")
+
+model_size = "turbo"
+whisper_model = whisper.load_model(model_size)
+
+# Run on GPU with FP16
+faster_whisper_model  = WhisperModel(model_size, device="cuda", compute_type="float16")
+# or run on GPU with INT8
+# faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
+# faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="int8")
+
+whisper_variant = 'faster_whisper'
 
 # Security layer applied to conversation
 # Use LLM Guard to scan and sanitize text
@@ -33,7 +40,8 @@ whisper_model = whisper.load_model("turbo")
 security = False
 
 # Only use PandasAI's Advanced Security Agent feature after license checking
-pandasAISecurity = None # AdvancedSecurityAgent() if Security else None
+pandasAISecurity = None  # AdvancedSecurityAgent() if Security else None
+
 
 # Initialize LLM Guard
 # Only use this after installing llm_guard and uncommenting related code here
@@ -172,15 +180,19 @@ class Session:
         )
 
     def get_transcribe_response(self, path):
+        if whisper_variant == 'faster_whisper':
+            segments, info = faster_whisper_model.transcribe(path, beam_size=5, word_timestamps=True)
+            return list(segments), info
         # audio = whisper.load_audio(path)
         # audio = whisper.pad_or_trim(audio)
         result = whisper_model.transcribe(path,
-            # language="en",
-            # no_speech_threshold=0.4,
-            # verbose=True,
-            word_timestamps=True,
-            fp16=False)
-        return result
+                                          # language="en",
+                                          # no_speech_threshold=0.4,
+                                          # verbose=True,
+                                          word_timestamps=True,
+                                          # fp16=False
+                                          )
+        return result['segments'], { 'duration' : 1}
         # transcription = client.audio.transcriptions.create(
         #     model="whisper-1",
         #     # model="gpt-4o-transcribe",
@@ -211,6 +223,7 @@ class Session:
             return response
         return sanitize_output(sanitized_query, response)
 
+
 # End class Session
 
 # List of sessions to maintain states with individual clients
@@ -237,6 +250,7 @@ def create_session(use_streamlit=False):
     print('Session created', session.token)
     return session.token
 
+
 def new_session():
     """Internal function to get the session based on client submitted token."""
     session = Session()
@@ -259,7 +273,10 @@ def set_model(name: str, token: str):
     model = ModelName.openai if name == 'openai' else ModelName.bamboo
     session = get_session_by_token(token)
     session.set_model(model)
+
+
 7
+
 
 def set_data(dfs: list[pd.DataFrame], token: str):
     """ Change current dataset

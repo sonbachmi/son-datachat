@@ -26,10 +26,6 @@ function Media({selection}: { selection: DataSelection | null }) {
     const [started, setStarted] = useState(false)
     const [text, setText] = useState<string>('')
 
-    function onEnded(nativeEvent: MediaEndedEvent) {
-        setStarted(false)
-    }
-
     function onStarted(nativeEvent: MediaStartedEvent) {
         setStarted(true)
         const media = document.querySelector(isAudio ? 'audio' : 'video')
@@ -39,6 +35,10 @@ function Media({selection}: { selection: DataSelection | null }) {
                 setText(currentText)
             }
         })
+    }
+
+    function onEnded(nativeEvent: MediaEndedEvent) {
+        // setStarted(false)
     }
 
     function onTimeUpdate(detail: MediaTimeUpdateEventDetail, nativeEvent: MediaTimeUpdateEvent) {
