@@ -25,7 +25,7 @@ from pandasai.responses.streamlit_response import StreamlitResponse
 load_dotenv()
 
 client = OpenAI()
-whisper_model = whisper.load_model("base")
+whisper_model = whisper.load_model("turbo")
 
 # Security layer applied to conversation
 # Use LLM Guard to scan and sanitize text
