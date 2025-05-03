@@ -21,19 +21,39 @@ import {getTextAtTime} from '../hooks/transcribe.ts'
 
 function Media({selection}: { selection: DataSelection | null }) {
     const player = useRef<MediaPlayerInstance>(null)
+    const subtitle = useRef<HTMLDivElement>(null)
     const isAudio = /\.(wav|mp3)$/i.test(selection?.filename)
     const type = isAudio ? 'Audio' : 'Video'
     const [started, setStarted] = useState(false)
     const [text, setText] = useState<string>('')
+
+    // useEffect(() => {
+    //     return player.current?.subscribe(({started}) => {
+    //         if (started) {
+    //             setStarted(true)
+    //             const media = document.querySelector(isAudio ? 'audio' : 'video')
+    //             media.addEventListener('timeupdate', () => {
+    //                 const currentText = getTextAtTime(media.currentTime, selection?.result)
+    //                 // if (currentText !== text) {
+    //                 //     setText(currentText)
+    //                 // }
+    //                 if (subtitle.current)
+    //                     subtitle.current.textContent = currentText
+    //             })
+    //         }
+    //     })
+    // }, [player, selection?.result])
 
     function onStarted(nativeEvent: MediaStartedEvent) {
         setStarted(true)
         const media = document.querySelector(isAudio ? 'audio' : 'video')
         media.addEventListener('timeupdate', () => {
             const currentText = getTextAtTime(media.currentTime, selection?.result)
-            if (currentText !== text) {
-                setText(currentText)
-            }
+            // if (currentText !== text) {
+            //     setText(currentText)
+            // }
+            if (subtitle.current)
+                subtitle.current.textContent = currentText
         })
     }
 
@@ -71,8 +91,8 @@ function Media({selection}: { selection: DataSelection | null }) {
                     <DefaultVideoLayout icons={defaultLayoutIcons}/>
                 </MediaPlayer>
                 {started &&
-                    <div className="subtitle">
-                        {text}
+                    <div className="subtitle" ref={subtitle}>
+                        {/*{text}*/}
                     </div>
                 }
             </div>
