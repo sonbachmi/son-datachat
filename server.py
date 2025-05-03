@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from asr import DecodeResult
 from main import create_session, new_session, get_session_by_token, Session, ModelName
 
 load_dotenv()
@@ -52,7 +53,8 @@ api.mount(
     '/media', StaticFiles(directory=os.path.join(root_path, 'media')), name='media'
 )
 
-require_session = False
+require_session = True
+
 
 # @api.middleware("http")
 # async def middleware(request: Request, call_next):
@@ -117,10 +119,7 @@ class UploadResponse(BaseModel):
 
 class MediaUploadResponse(BaseModel):
     url: str
-    result: dict
-    info: object
-    tokens: int
-    estimated_cost: float
+    result: DecodeResult
 
 
 @api.post('/data/input')
@@ -146,12 +145,9 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     # shutil.copyfileobj(file.file, out_file)
                     out_file.write(file.file.read())
                 public_url = f'{SERVER_URL}/media/{out_filename}'
-                segments, info = session.get_transcribe_response(out_path)
-                tokens = sum(len(segment.tokens) for segment in segments)
-                estimated_cost = info.duration * 0.006
+                result = session.get_transcribe_response(out_path)
                 return MediaUploadResponse(
-                    url=public_url, result={'segments': segments}, info=info,
-                    tokens=tokens, estimated_cost=round(estimated_cost, 0 if estimated_cost > 1 else 2))
+                    url=public_url, result=result)
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'

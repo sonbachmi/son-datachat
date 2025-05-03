@@ -13,26 +13,16 @@ import string
 from enum import Enum
 
 import pandas as pd
-import whisper
 from dotenv import load_dotenv
-from faster_whisper import WhisperModel
+
 from pandasai import Agent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
 
+from asr import transcribe
+
 load_dotenv()
 client = OpenAI()
-
-model_size = "turbo"
-whisper_model = whisper.load_model(model_size)
-
-# Run on GPU with FP16
-faster_whisper_model  = WhisperModel(model_size, device="cuda", compute_type="float16")
-# or run on GPU with INT8
-# faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
-# faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="int8")
-
-whisper_variant = 'faster_whisper'
 
 # Security layer applied to conversation
 # Use LLM Guard to scan and sanitize text
@@ -41,7 +31,6 @@ security = False
 
 # Only use PandasAI's Advanced Security Agent feature after license checking
 pandasAISecurity = None  # AdvancedSecurityAgent() if Security else None
-
 
 # Initialize LLM Guard
 # Only use this after installing llm_guard and uncommenting related code here
@@ -180,25 +169,7 @@ class Session:
         )
 
     def get_transcribe_response(self, path):
-        if whisper_variant == 'faster_whisper':
-            segments, info = faster_whisper_model.transcribe(path, beam_size=5, word_timestamps=True)
-            return list(segments), info
-        # audio = whisper.load_audio(path)
-        # audio = whisper.pad_or_trim(audio)
-        result = whisper_model.transcribe(path,
-                                          # language="en",
-                                          # no_speech_threshold=0.4,
-                                          # verbose=True,
-                                          word_timestamps=True,
-                                          # fp16=False
-                                          )
-        return result['segments'], { 'duration' : 1}
-        # transcription = client.audio.transcriptions.create(
-        #     model="whisper-1",
-        #     # model="gpt-4o-transcribe",
-        #     file=audio_file
-        # )
-        # return transcription.text
+        return transcribe(path)
 
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled
