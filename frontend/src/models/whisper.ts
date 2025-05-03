@@ -4,6 +4,7 @@ export interface TranscribeSegment {
     start: number
     end: number
     text: string
+    tokens: number[]
 }
 
 export interface TranscribeResult {

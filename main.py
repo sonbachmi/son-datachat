@@ -175,7 +175,7 @@ class Session:
         # audio = whisper.load_audio(path)
         # audio = whisper.pad_or_trim(audio)
         result = whisper_model.transcribe(path,
-            language="en",
+            # language="en",
             # no_speech_threshold=0.4,
             # verbose=True,
             word_timestamps=True,

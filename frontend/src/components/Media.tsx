@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react'
 import {Alert, Stack} from '@mantine/core'
 import {IconInfoCircle} from '@tabler/icons-react'
 import {
+    MediaEndedEvent,
     MediaPlayer,
     MediaPlayerInstance,
     type MediaPlayEvent,
@@ -16,7 +17,7 @@ import '@vidstack/react/player/styles/default/layouts/video.css';
 import './Media.css'
 
 import {DataSelection} from '../models/selection.ts'
-import {getTextAtTime} from '../hooks/subtitling.ts'
+import {getTextAtTime} from '../hooks/transcribe.ts'
 
 function Media({selection}: { selection: DataSelection | null }) {
     const player = useRef<MediaPlayerInstance>(null)
@@ -25,27 +26,9 @@ function Media({selection}: { selection: DataSelection | null }) {
     const [started, setStarted] = useState(false)
     const [text, setText] = useState<string>('')
 
-    // useEffect(() => {
-    //     // Access snapshot of player state.
-    //     // const { paused } = player.current!.state;
-    //     // Subscribe for updates without triggering renders.
-    //     return player.current!.subscribe(({started}) => {
-    //             if (started) {
-    //                 setStarted(true)
-    //                 const media = document.querySelector(isAudio ? 'audio' : 'video')
-    //                 media.addEventListener('timeupdate', () => {
-    //                     const currentText = getTextAtTime(media.currentTime, selection?.result)
-    //                     if (currentText !== text) {
-    //                         setText(currentText)
-    //                         // console.log(currentText)
-    //                     }
-    //                 })
-    //                 // player.current!.subscribe(({currentTime}) => {
-    //                 // })
-    //             }
-    //         }
-    //     )
-    // }, [player.current]);
+    function onEnded(nativeEvent: MediaEndedEvent) {
+        setStarted(false)
+    }
 
     function onStarted(nativeEvent: MediaStartedEvent) {
         setStarted(true)
@@ -54,7 +37,6 @@ function Media({selection}: { selection: DataSelection | null }) {
             const currentText = getTextAtTime(media.currentTime, selection?.result)
             if (currentText !== text) {
                 setText(currentText)
-                // console.log(currentText)
             }
         })
     }
@@ -82,7 +64,7 @@ function Media({selection}: { selection: DataSelection | null }) {
             </Alert>
             <div className="player">
                 <MediaPlayer ref={player} title={`Transcribed ${type}`} src={selection?.url} crossOrigin={true}
-                             onStarted={onStarted} onPlay={onPlay} onMediaPlayRequest={onPlayRequest}
+                             onStarted={onStarted} onEnded={onEnded} onPlay={onPlay} onMediaPlayRequest={onPlayRequest}
                              onTimeUpdate={onTimeUpdate}>
                     <MediaProvider/>
                     <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>

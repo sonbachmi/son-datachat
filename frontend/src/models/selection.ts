@@ -1,4 +1,4 @@
-import {TranscribeResult} from './transcribe.ts'
+import {TranscribeResult} from './whisper.ts'
 
 export interface DataSelection {
     filename: string

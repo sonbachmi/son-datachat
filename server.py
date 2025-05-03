@@ -115,6 +115,8 @@ class UploadResponse(BaseModel):
 class MediaUploadResponse(BaseModel):
     url: str
     result: object
+    tokens: int
+    estimated_cost: float
 
 
 @api.post('/data/input')
@@ -141,7 +143,11 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     out_file.write(file.file.read())
                 public_url = f'{SERVER_URL}/media/{out_filename}'
                 result = session.get_transcribe_response(out_path)
-                return MediaUploadResponse(url=public_url, result=result)
+                tokens = sum(len(segment) for segment in result['segments'])
+                estimated_cost = tokens * 0.006
+                return MediaUploadResponse(
+                    url=public_url, result=result,
+                    tokens=tokens, estimated_cost=round(estimated_cost, 0 if estimated_cost > 1 else 2))
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'

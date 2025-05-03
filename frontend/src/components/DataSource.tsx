@@ -5,6 +5,7 @@ import {IconExclamationCircle, IconFileCheck, IconFiles, IconInfoCircle} from '@
 
 import {postFormData, useFetch} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
+import {TranscribeResult} from '../models/whisper.ts'
 
 import './DataSource.css'
 
@@ -16,7 +17,8 @@ interface UploadedFile {
     label: string
     rows?: number
     url?: string
-    result?: object
+    result?: TranscribeResult
+    tokens?: number
 }
 
 interface Props {
@@ -29,7 +31,6 @@ const DataSource: FC<Props> = ({setSelection}) => {
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
     const onFilesChange = (files: File[]) => {
-        // console.log(files)
         setFiles(files)
         setUploadedFiles([])
         setSelection(null)
@@ -61,6 +62,8 @@ const DataSource: FC<Props> = ({setSelection}) => {
         try {
             const data = await postFormData('/data/input', formData)
             const isMedia = !!data.result
+            if (isMedia)
+                console.log(data)
             if (!isMedia && data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
             const upFiles = files.map(((file, index) => {
@@ -108,7 +111,6 @@ const DataSource: FC<Props> = ({setSelection}) => {
         const isMedia = !!f.result
         setIsMedia(isMedia)
         if (isMedia) {
-            console.log(f)
             setSelection({
                 filename: f.label,
                 url: f.url,
