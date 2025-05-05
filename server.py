@@ -3,7 +3,7 @@ FastAPI app to serve public REST API to connect frontend clients to the core LLM
 
 Usage: run with uvicorn, sharing SERVER_URL in .env for clients to use
 """
-
+import math
 import os
 import random
 import re
@@ -146,6 +146,8 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     out_file.write(file.file.read())
                 public_url = f'{SERVER_URL}/media/{out_filename}'
                 result = session.get_transcribe_response(out_path)
+                if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
+                    result.info.vad_options.max_speech_duration_s = 0
                 return MediaUploadResponse(
                     url=public_url, result=result)
             df = (
