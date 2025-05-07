@@ -9,5 +9,10 @@ export interface TranscribeSegment {
 
 export interface TranscribeResult {
     segments: TranscribeSegment[]
+    duration: number,
+    task: string,
+    lang: string,
+    decode_time: number,
+    estimated_cost: number,
     info?: object
 }

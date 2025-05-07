@@ -1,7 +1,15 @@
 import {useEffect, useRef, useState} from 'react'
-import {Alert, Stack} from '@mantine/core'
-import {IconInfoCircle} from '@tabler/icons-react'
+import {Alert, Anchor, Group, Paper, Progress, SimpleGrid, Stack, Table, Text} from '@mantine/core'
 import {
+    IconClock,
+    IconClock12,
+    IconInfoCircle,
+    IconLanguage,
+    IconReceipt2,
+    IconTimeDuration0, IconTimeDurationOff
+} from '@tabler/icons-react'
+import {
+    Icon,
     MediaEndedEvent,
     MediaPlayer,
     MediaPlayerInstance,
@@ -25,7 +33,18 @@ function Media({selection}: { selection: DataSelection | null }) {
     const isAudio = /\.(wav|mp3)$/i.test(selection?.filename)
     const type = isAudio ? 'Audio' : 'Video'
     const [started, setStarted] = useState(false)
-    const [text, setText] = useState<string>('')
+
+    const result = selection?.result
+    const stats =
+        {
+            language: result.lang,
+            duration: result.duration + 's',
+            decodeTime: result.decode_time + 's',
+            speed: (result.decode_time / result.duration * 100),
+            diff: ((result.duration - result.decode_time) / result.duration * 100),
+            estimatedCost: 'USD ' + Intl.NumberFormat().format(result.estimated_cost),
+        }
+    const translate = result.task === 'translate'
 
     // useEffect(() => {
     //     return player.current?.subscribe(({started}) => {
@@ -78,10 +97,100 @@ function Media({selection}: { selection: DataSelection | null }) {
 
     return <div className="Media">
         <Stack>
-            <Alert variant="light" color="blue" title={`${type} transcribed`}
+            <Alert variant="light" color="blue" title={`${type} transcribed and subtitled`}
                    icon={<IconInfoCircle/>}>
-                Play with subtitles
             </Alert>
+            {selection?.result && <div className="stats">
+                <SimpleGrid cols={{base: 1, xs: 2, md: 4}}>
+                    <Paper withBorder p="md" radius="md" key={stats.language} className="stat">
+                        <Group justify="space-between">
+                            <Text size="xs" c="dimmed" className="title">
+                                Detected Language
+                            </Text>
+                            <IconLanguage className="icon" size={22} stroke={1.5}/>
+                        </Group>
+
+                        <Group align="flex-end" gap="xs" mt={25}>
+                            <Text className="value">{stats.language}</Text>
+                        </Group>
+                        <Text fz="xs" c="dimmed" mt={7}>
+                            {translate ? 'Auto translated to English' : ''}
+                        </Text>
+                    </Paper>
+                    <Paper withBorder p="md" radius="md" key={stats.duration} className="stat">
+                        <Group justify="space-between">
+                            <Text size="xs" c="dimmed" className="title">
+                                Duration
+                            </Text>
+                            <IconClock className="icon" size={22} stroke={1.5}/>
+                        </Group>
+
+                        <Group align="flex-end" gap="xs" mt={25}>
+                            <Text className="value">{stats.duration}</Text>
+                        </Group>
+                        <Text fz="xs" c="dimmed" mt={7}>
+                            Total media duration
+                        </Text>
+                    </Paper>
+                    <Paper withBorder p="md" radius="md" key={stats.decodeTime} className="stat">
+                        <Group justify="space-between">
+                            <Text size="xs" c="dimmed" className="title">
+                                Processing Time
+                            </Text>
+                            <IconTimeDurationOff className="icon" size={22} stroke={1.5}/>
+                        </Group>
+
+                        <Group align="flex-end" gap="xs" mt={25}>
+                            <Text className="value">{stats.decodeTime}</Text>
+                            <Text c="teal" fz="sm" fw={500} className="diff">
+                                <span>{stats.speed.toFixed(0)}%</span>
+                            </Text>
+                        </Group>
+                        {/*                        <Group justify="space-between">
+                            <Text fz="xs" c="teal" fw={700}>
+                                {stats.speed.toFixed(0)}%
+                            </Text>
+                            <Text fz="xs" c="lightgray" fw={700}>
+                                {stats.diff.toFixed(0)}%
+                            </Text>
+                        </Group>
+                        <Progress.Root>
+                            <Progress.Section
+                                className="progress-section"
+                                value={stats.speed}
+                                color="teal"
+                            />
+
+                            <Progress.Section
+                                className="progress-section"
+                                value={stats.diff}
+                                color="lightgray"
+                            />
+                        </Progress.Root>*/}
+
+                        <Text fz="xs" c="dimmed" mt={7}>
+                            Compared to duration
+                        </Text>
+                    </Paper>
+                    <Paper withBorder p="md" radius="md" key={stats.estimatedCost} className="stat">
+                        <Group justify="space-between">
+                            <Text size="xs" c="dimmed" className="title">
+                                Estimated Cost
+                            </Text>
+                            <IconReceipt2 className="icon" size={22} stroke={1.5}/>
+                        </Group>
+
+                        <Group align="flex-end" gap="xs" mt={25}>
+                            <Text className="value">{stats.estimatedCost}</Text>
+                        </Group>
+
+                        <Text fz="xs" c="dimmed" mt={7}>
+                            Per OpenAI standard rate
+                        </Text>
+                    </Paper>
+                </SimpleGrid>
+
+            </div>}
             <div className="player">
                 <MediaPlayer ref={player} title={`Transcribed ${type}`} src={selection?.url} crossOrigin={true}
                              onStarted={onStarted} onEnded={onEnded} onPlay={onPlay} onMediaPlayRequest={onPlayRequest}
