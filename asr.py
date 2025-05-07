@@ -8,7 +8,7 @@ from faster_whisper.transcribe import Segment, TranscriptionInfo
 from pydantic import BaseModel
 from whisper.tokenizer import LANGUAGES
 
-model_size = "small"
+model_size = "medium"
 whisper_model = whisper.load_model(model_size)
 
 faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="float16")

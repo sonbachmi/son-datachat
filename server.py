@@ -10,28 +10,31 @@ import re
 import string
 from pathlib import Path
 
+from dotenv import load_dotenv
+from pydantic import BaseModel
 import pandas as pd
 import streamlit as st
-from dotenv import load_dotenv
+
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 
 from asr import DecodeResult
 from main import create_session, new_session, get_session_by_token, Session, ModelName
 
-load_dotenv()
-
 root_path = os.path.dirname(os.path.realpath(__file__))
 
-# Read URL config from env
-SERVER_URL = st.secrets.get(
-    'SERVER_URL', os.environ.get('SERVER_URL', 'http://localhost:8000')
-)
-FRONTEND_URL = st.secrets.get(
-    'FRONTEND_URL', os.environ.get('FRONTEND_URL', 'http://localhost:5173')
-)
+env = os.environ.get('DATACHAT_ENV','development')
+production = env == 'production'
+if production:
+    print('Running in production mode')
+
+load_dotenv(dotenv_path= ".env.production" if production else None, verbose=True)
+
+# SERVER_URL = os.environ.get('SERVER_URL')
+SERVER_URL = 'https://dcapi.sonnguyen.online' if production else 'http://localhost:8000'
+# FRONTEND_URL = os.environ.get('FRONTEND_URL')
+FRONTEND_URL = 'https://datachat.sonnguyen.online' if production else 'http://localhost:5173'
 
 api = FastAPI()
 
@@ -39,7 +42,7 @@ api = FastAPI()
 # Restrict origins to minimum for security
 api.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=['*'],  # '[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -54,7 +57,6 @@ api.mount(
 )
 
 require_session = True
-
 
 # @api.middleware("http")
 # async def middleware(request: Request, call_next):

@@ -1,5 +1,5 @@
 import {fileURLToPath, URL} from 'url'
-import { resolve } from 'path'
+import {resolve} from 'path'
 import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -13,4 +13,9 @@ export default defineConfig({
             {find: '@', replacement: resolve(__dirname, 'src')},
         ],
     },
+    server: {
+        allowedHosts: [
+            'datachat.sonnguyen.online'
+        ]
+    }
 })
