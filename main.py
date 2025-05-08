@@ -19,7 +19,7 @@ from pandasai import Agent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
 
-from asr import transcribe
+from asr import transcribe, Media, preprocess
 
 load_dotenv()
 client = OpenAI()
@@ -98,6 +98,8 @@ class Session:
     bambooLLM = BambooLLM()
     openAiLLM = OpenAI(temperature=0)
 
+    current_media: Media
+
     def __init__(self, use_streamlit=False):
         """ Instantiate new session
 
@@ -112,6 +114,7 @@ class Session:
         self.datasets: list[pd.DataFrame] = []
         self.df = None
         self.agent = None
+        self.current_media = None
 
     def get_config(self):
         return {
@@ -168,8 +171,12 @@ class Session:
             memory_size=10,
         )
 
-    def get_transcribe_response(self, path):
-        return transcribe(path)
+    def get_preprocess_response(self, filename, path):
+        current_media = preprocess(filename, path)
+        return current_media
+
+    def get_transcribe_response(self, filename, path):
+        return transcribe(filename, path)
 
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled

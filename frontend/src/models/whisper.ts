@@ -11,7 +11,8 @@ export interface TranscribeResult {
     segments: TranscribeSegment[]
     duration: number,
     task: string,
-    lang: string,
+    language: string,
+    decoded: boolean
     decode_time: number,
     estimated_cost: number,
     info?: object

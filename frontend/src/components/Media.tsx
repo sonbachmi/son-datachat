@@ -1,21 +1,16 @@
-import {useEffect, useRef, useState} from 'react'
-import {Alert, Anchor, Group, Paper, Progress, SimpleGrid, Stack, Table, Text} from '@mantine/core'
+import {useRef, useState} from 'react'
+import {Alert, Group, Paper, SimpleGrid, Stack, Text} from '@mantine/core'
+import {IconClock, IconInfoCircle, IconLanguage, IconReceipt2, IconTimeDurationOff} from '@tabler/icons-react'
 import {
-    IconClock,
-    IconClock12,
-    IconInfoCircle,
-    IconLanguage,
-    IconReceipt2,
-    IconTimeDuration0, IconTimeDurationOff
-} from '@tabler/icons-react'
-import {
-    Icon,
     MediaEndedEvent,
     MediaPlayer,
     MediaPlayerInstance,
     type MediaPlayEvent,
     type MediaPlayRequestEvent,
-    MediaProvider, MediaStartedEvent, MediaTimeUpdateEvent, MediaTimeUpdateEventDetail
+    MediaProvider,
+    MediaStartedEvent,
+    MediaTimeUpdateEvent,
+    MediaTimeUpdateEventDetail
 } from '@vidstack/react';
 import {DefaultAudioLayout, defaultLayoutIcons, DefaultVideoLayout} from '@vidstack/react/player/layouts/default';
 
@@ -37,7 +32,7 @@ function Media({selection}: { selection: DataSelection | null }) {
     const result = selection?.result
     const stats =
         {
-            language: result.lang,
+            language: result.language,
             duration: result.duration + 's',
             decodeTime: result.decode_time + 's',
             speed: (result.decode_time / result.duration * 100),
@@ -100,7 +95,7 @@ function Media({selection}: { selection: DataSelection | null }) {
             <Alert variant="light" color="blue" title={`${type} transcribed and subtitled`}
                    icon={<IconInfoCircle/>}>
             </Alert>
-            {selection?.result && <div className="stats">
+            {result && <div className="stats">
                 <SimpleGrid cols={{base: 1, xs: 2, md: 4}}>
                     <Paper withBorder p="md" radius="md" key={stats.language} className="stat">
                         <Group justify="space-between">
@@ -132,21 +127,22 @@ function Media({selection}: { selection: DataSelection | null }) {
                             Total media duration
                         </Text>
                     </Paper>
-                    <Paper withBorder p="md" radius="md" key={stats.decodeTime} className="stat">
-                        <Group justify="space-between">
-                            <Text size="xs" c="dimmed" className="title">
-                                Processing Time
-                            </Text>
-                            <IconTimeDurationOff className="icon" size={22} stroke={1.5}/>
-                        </Group>
+                    {result.decoded && <>
+                        <Paper withBorder p="md" radius="md" key={stats.decodeTime} className="stat">
+                            <Group justify="space-between">
+                                <Text size="xs" c="dimmed" className="title">
+                                    Processing Time
+                                </Text>
+                                <IconTimeDurationOff className="icon" size={22} stroke={1.5}/>
+                            </Group>
 
-                        <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{stats.decodeTime}</Text>
-                            <Text c="teal" fz="sm" fw={500} className="diff">
-                                <span>{stats.speed.toFixed(0)}%</span>
-                            </Text>
-                        </Group>
-                        {/*                        <Group justify="space-between">
+                            <Group align="flex-end" gap="xs" mt={25}>
+                                <Text className="value">{stats.decodeTime}</Text>
+                                <Text c="teal" fz="sm" fw={500} className="diff">
+                                    <span>{stats.speed.toFixed(0)}%</span>
+                                </Text>
+                            </Group>
+                            {/*                        <Group justify="space-between">
                             <Text fz="xs" c="teal" fw={700}>
                                 {stats.speed.toFixed(0)}%
                             </Text>
@@ -168,26 +164,27 @@ function Media({selection}: { selection: DataSelection | null }) {
                             />
                         </Progress.Root>*/}
 
-                        <Text fz="xs" c="dimmed" mt={7}>
-                            Compared to duration
-                        </Text>
-                    </Paper>
-                    <Paper withBorder p="md" radius="md" key={stats.estimatedCost} className="stat">
-                        <Group justify="space-between">
-                            <Text size="xs" c="dimmed" className="title">
-                                Estimated Cost
+                            <Text fz="xs" c="dimmed" mt={7}>
+                                Compared to duration
                             </Text>
-                            <IconReceipt2 className="icon" size={22} stroke={1.5}/>
-                        </Group>
+                        </Paper>
+                        <Paper withBorder p="md" radius="md" key={stats.estimatedCost} className="stat">
+                            <Group justify="space-between">
+                                <Text size="xs" c="dimmed" className="title">
+                                    Estimated Cost
+                                </Text>
+                                <IconReceipt2 className="icon" size={22} stroke={1.5}/>
+                            </Group>
 
-                        <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{stats.estimatedCost}</Text>
-                        </Group>
+                            <Group align="flex-end" gap="xs" mt={25}>
+                                <Text className="value">{stats.estimatedCost}</Text>
+                            </Group>
 
-                        <Text fz="xs" c="dimmed" mt={7}>
-                            Per OpenAI standard rate
-                        </Text>
-                    </Paper>
+                            <Text fz="xs" c="dimmed" mt={7}>
+                                Per OpenAI standard rate
+                            </Text>
+                        </Paper>
+                    </>}
                 </SimpleGrid>
 
             </div>}
@@ -199,7 +196,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                     <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
                     <DefaultVideoLayout icons={defaultLayoutIcons}/>
                 </MediaPlayer>
-                {started &&
+                {result.decoded && started &&
                     <div className="subtitle" ref={subtitle}>
                         {/*{text}*/}
                     </div>

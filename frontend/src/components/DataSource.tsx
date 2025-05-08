@@ -62,8 +62,10 @@ const DataSource: FC<Props> = ({setSelection}) => {
         try {
             const data = await postFormData('/data/input', formData)
             const isMedia = !!data.result
-            if (isMedia)
+            if (isMedia) {
                 console.log(data)
+                setIsMedia(true)
+            }
             if (!isMedia && data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
             const upFiles = files.map(((file, index) => {
@@ -80,6 +82,16 @@ const DataSource: FC<Props> = ({setSelection}) => {
             }))
             selectFile(0, upFiles)
             setUploadedFiles(upFiles)
+
+            if (isMedia) {
+                const f = upFiles[0]
+                setSelection({
+                    filename: f.label,
+                    url: f.url,
+                    result: f.result,
+                    media: true
+                })
+            }
         } catch
             (error) {
             setError(error)
@@ -99,43 +111,34 @@ const DataSource: FC<Props> = ({setSelection}) => {
     }
     const [max, setMax] = useState<number>(100)
     const [head, setHead] = useState<string | number>('')
+    const [, fetchingSelect, errorSelect, doFetch] = useFetch('/data/select', {})
+
     const onHeadChange = (value: string | number) => {
         setHead(value)
         setDirty(true)
     }
-    const [, fetchingSelect, errorSelect, doFetch] = useFetch('/data/select', {})
+
     const applySelection = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+        e?.preventDefault()
         if (index == null) return
         const f = uploadedFiles[0]
-        const isMedia = !!f.result
-        setIsMedia(isMedia)
-        if (isMedia) {
+        doFetch({
+            params: {
+                index: index,
+                head: head
+            }
+        }).then(() => {
+            const f = uploadedFiles[+index]
             setSelection({
                 filename: f.label,
-                url: f.url,
-                result: f.result,
-                media: true
+                head: +head,
+                committed: true,
+                media: false
             })
-            setDirty(true)
-        } else {
-            doFetch({
-                params: {
-                    index: index,
-                    head: head
-                }
-            }).then(() => {
-                const f = uploadedFiles[+index]
-                setSelection({
-                    filename: f.label,
-                    head: +head,
-                    committed: true,
-                    media: false
-                })
-                setDirty(!!errorSelect)
-            })
-        }
+            setDirty(!!errorSelect)
+        })
     }
+
 
     return (
         <div className="DataSource">
@@ -147,47 +150,54 @@ const DataSource: FC<Props> = ({setSelection}) => {
                                size="md" inputSize="lg"
                                leftSection={icon}
                                label={verb + ' one or more files'}
-                               description="Datasheet (CSV, XLSX) or media (WAV, MP3, MP4, MPEG, WEBM)"
+                               description="Datasheet (CSV, XLSX) or media (WAV, MP3, MP4, MPEG, WEBM), max 50MB"
                                placeholder="Choose files"/>
                     <Button disabled={!files.length} onClick={upload}>{verb}</Button>
                     {fetching && <Loader color="blue"/>}
                     {error && <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
                                             color="orange" mt="md">
-                        There was a problem uploading files: {error.message}</Notification>}
+                        There was a problem uploading files: {error.message} <br/>{error.stack}</Notification>}
                 </Stack>
             </Fieldset>
-            <Fieldset legend="Data Selector" className="fieldset">
-                {!uploadedFiles.length ?
-                    <Alert variant="light" color="orange" title="Data input required" icon={<IconInfoCircle/>}>
-                        Please upload file for analysis
+            {isMedia ?
+                <Fieldset legend="Data Detection" className="fieldset">
+                    <Alert variant="light" color="blue" title="Media detected" icon={<IconInfoCircle/>}>
+                        Configure your preferences before transcribing media
                     </Alert>
-                    : <form onSubmit={applySelection}>
-                        <Stack>
-                            <Select size="md"
-                                    label="Select file"
-                                    description="Only feed data from this file"
-                                    leftSection={iconFile} checkIconPosition="left"
-                                    data={uploadedFiles} value={index} onChange={onIndexChange}/>
-                            {!uploadedFiles[0].result &&
-                                <NumberInput
-                                    label="Limit number of rows"
-                                    description={`From total ${max}`}
-                                    placeholder="Enter number"
-                                    value={head} min={1} max={max}
-                                    onChange={onHeadChange}
-                                    size="md"
-                                />
-                            }
+                </Fieldset> :
+                <Fieldset legend="Data Selector" className="fieldset">
+                    {!uploadedFiles.length ?
+                        <Alert variant="light" color="orange" title="Data input required" icon={<IconInfoCircle/>}>
+                            Please upload file for analysis
+                        </Alert>
+                        : <form onSubmit={applySelection}>
+                            <Stack>
+                                <Select size="md"
+                                        label="Select file"
+                                        description="Only feed data from this file"
+                                        leftSection={iconFile} checkIconPosition="left"
+                                        data={uploadedFiles} value={index} onChange={onIndexChange}/>
+                                {!uploadedFiles[0].result &&
+                                    <NumberInput
+                                        label="Limit number of rows"
+                                        description={`From total ${max}`}
+                                        placeholder="Enter number"
+                                        value={head} min={1} max={max}
+                                        onChange={onHeadChange}
+                                        size="md"
+                                    />
+                                }
 
-                            <Button type="submit" disabled={!dirty}>Apply Selection</Button>
+                                <Button type="submit" disabled={!dirty}>Apply Selection</Button>
 
-                            {fetchingSelect && <Loader color="blue"/>}
-                            {errorSelect && <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
-                                                          color="orange" mt="md">
-                                There was a problem submitting selection: {errorSelect.message}</Notification>}
-                        </Stack>
-                    </form>}
-            </Fieldset>
+                                {fetchingSelect && <Loader color="blue"/>}
+                                {errorSelect && <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
+                                                              color="orange" mt="md">
+                                    There was a problem submitting selection: {errorSelect.message}</Notification>}
+                            </Stack>
+                        </form>}
+                </Fieldset>
+            }
         </div>
     )
 }
