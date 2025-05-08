@@ -19,7 +19,7 @@ from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from asr import DecodeResult
+from asr import DecodeResult, Media
 from main import create_session, new_session, get_session_by_token, Session, ModelName
 
 root_path = os.path.dirname(os.path.realpath(__file__))
@@ -123,6 +123,8 @@ class MediaUploadResponse(BaseModel):
     url: str
     result: DecodeResult
 
+class MediaDecodeResponse(BaseModel):
+    result: DecodeResult
 
 @api.post('/data/input')
 async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | MediaUploadResponse:
@@ -147,11 +149,12 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     # shutil.copyfileobj(file.file, out_file)
                     out_file.write(file.file.read())
                 public_url = f'{SERVER_URL}/media/{out_filename}'
-                result = session.get_transcribe_response(out_path)
-                if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
-                    result.info.vad_options.max_speech_duration_s = 0
+                media = session.get_preprocess_response(file.filename, out_path)
+                # result = session.get_transcribe_response(file.filename, out_path)
+                # if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
+                #     result.info.vad_options.max_speech_duration_s = 0
                 return MediaUploadResponse(
-                    url=public_url, result=result)
+                    url=public_url, result=media.result)
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'
