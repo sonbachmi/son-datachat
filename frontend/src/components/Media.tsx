@@ -98,7 +98,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                         </Group>
 
                         <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{result.limited ? '60' : stats.duration} <span className="unit">seconds</span></Text>
+                            <Text className="value">{result.limited ? '60' : stats.duration} <span className="unit">secs</span></Text>
                             {result.limited && <Text c="teal" fz="sm" fw={500} className="diff">
                                 <span>/ {stats.duration}s</span>
                             </Text>}
@@ -117,7 +117,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                             </Group>
 
                             <Group align="flex-end" gap="xs" mt={25}>
-                                <Text className="value">{stats.decodeTime} <span className="unit">seconds</span></Text>
+                                <Text className="value">{stats.decodeTime} <span className="unit">secs</span></Text>
                                 <Text c="teal" fz="sm" fw={500} className="diff">
                                     <span>{stats.speed.toFixed(0)}%</span>
                                 </Text>

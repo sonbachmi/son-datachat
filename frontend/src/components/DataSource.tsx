@@ -224,7 +224,7 @@ const DataSource: FC<Props> = ({selection, setSelection}) => {
         }).then((data) => {
             console.log(data)
             setSelection({
-                ...selection, ...{result: data.result}, ...{url: data.url}
+                ...selection, ...{result: data.result}
             })
             setDirty(!!errorTranscribe)
         })
@@ -266,7 +266,7 @@ const DataSource: FC<Props> = ({selection, setSelection}) => {
                                         data={performanceLevels} value={level} onChange={onLevelChange}/>
                                 {duration >= 61 &&
                                 <Select size="md"
-                                        label="Limit"
+                                        label="Limit Duration"
                                         description="Transcribe partially to save time for long media"
                                         leftSection={iconLimit} checkIconPosition="left"
                                         data={durationLimits} value={limit} onChange={onLimitChange}/>}

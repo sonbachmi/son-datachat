@@ -3,23 +3,20 @@ FastAPI app to serve public REST API to connect frontend clients to the core LLM
 
 Usage: run with uvicorn, sharing SERVER_URL in .env for clients to use
 """
-import math
 import os
 import random
 import re
 import string
 from pathlib import Path
 
-from dotenv import load_dotenv
-from pydantic import BaseModel
 import pandas as pd
-import streamlit as st
-
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
-from asr import DecodeResult, Media
+from asr import DecodeResult, DecodeConfig
 from main import create_session, new_session, get_session_by_token, Session, ModelName
 
 root_path = os.path.dirname(os.path.realpath(__file__))
@@ -114,6 +111,14 @@ async def set_model(model: str, token: str) -> SetModelResponse:
     return SetModelResponse(model=model)
 
 
+def generate_filename(extension: str) -> str:
+    return (
+            ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+            + '.'
+            + extension
+    )
+
+
 class UploadResponse(BaseModel):
     rows: list[int]
     selectedIndex: int
@@ -144,19 +149,18 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     status_code=400, detail='Input file must be datasheet or media'
                 )
             if extension not in ['csv', 'xlsx']:
-                type = 'audio' if extension in ['wav', 'mp3'] else 'video'
                 out_filename = generate_filename(extension)
                 out_path = f'{root_path}/media/{out_filename}'
                 with open(out_path, "wb+") as out_file:
                     # shutil.copyfileobj(file.file, out_file)
                     out_file.write(file.file.read())
-                public_url = f'{SERVER_URL}/media/{out_filename}'
                 media = session.get_preprocess_response(file.filename, out_path)
                 # result = session.get_transcribe_response(file.filename, out_path)
                 # if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
                 #     result.info.vad_options.max_speech_duration_s = 0
                 return MediaUploadResponse(
-                    type=type, url=public_url, result=media.result)
+                    type=media.type, url=f'{SERVER_URL}/media/{out_filename}', result=media.result)
+
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'
@@ -168,6 +172,21 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
         return UploadResponse(rows=rows, selectedIndex=0)
     except (IOError, Exception) as e:
         raise HTTPException(status_code=500, detail=repr(e))
+
+
+class TranscribeResponse(BaseModel):
+    result: object
+
+@api.post('/transcribe')
+async def get_transcribe(token: str, config: DecodeConfig) -> TranscribeResponse:
+    print(config)
+    session = get_session(token)
+    try:
+        media = session.get_transcribe_response(config)
+        return TranscribeResponse(result=media.result)
+    except (ValueError, Exception) as e:
+        print('Transcribe error', e)
+        raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')
 
 
 class SetDataResponse(BaseModel):
@@ -194,13 +213,6 @@ class QueryResponse(BaseModel):
     type: str
     html: bool
 
-def generate_filename(extension: str) -> str:
-    return (
-            ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
-            + '.'
-            + extension
-    )
-
 def render_image(path):
     """Internal function to render image output from LLM as HTML img tag using the mounted URL."""
     file = Path(path)
@@ -220,20 +232,6 @@ def render_answer(answer) -> (str, str):
     elif t is pd.DataFrame:
         return answer.to_html(), 'html'
     return str(answer), 'text'
-
-
-class TranscribeResponse(BaseModel):
-    result: object
-
-@api.post('/transcribe')
-async def get_transcribe(token: str) -> TranscribeResponse:
-    session = get_session(token)
-    try:
-        media = session.get_transcribe_response()
-        return TranscribeResponse(result=media.result)
-    except (ValueError, Exception) as e:
-        print('Transcribe error', e)
-        raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')
 
 
 @api.post('/query')

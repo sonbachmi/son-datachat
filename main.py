@@ -14,14 +14,14 @@ from enum import Enum
 
 import pandas as pd
 from dotenv import load_dotenv
-
 from pandasai import Agent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
 
-from asr import transcribe, Media, preprocess
+from asr import transcribe, Media, preprocess, DecodeConfig
 
 load_dotenv()
+
 client = OpenAI()
 
 # Security layer applied to conversation
@@ -31,6 +31,7 @@ security = False
 
 # Only use PandasAI's Advanced Security Agent feature after license checking
 pandasAISecurity = None  # AdvancedSecurityAgent() if Security else None
+
 
 # Initialize LLM Guard
 # Only use this after installing llm_guard and uncommenting related code here
@@ -172,11 +173,15 @@ class Session:
         )
 
     def get_preprocess_response(self, filename, path):
-        self.current_media = preprocess(filename, path)
-        return self.current_media
+        extension = os.path.splitext(filename)[1][1:].lower()
+        media = preprocess(filename, path)
+        media.type = 'audio' if extension in ['wav', 'mp3'] else 'video'
+        self.current_media = media
+        return media
 
-    def get_transcribe_response(self):
-        return transcribe(self.current_media)
+    def get_transcribe_response(self, config: DecodeConfig):
+        media = self.current_media
+        return transcribe(media, config)
 
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled

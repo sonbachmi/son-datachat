@@ -11,22 +11,34 @@ from pydantic import BaseModel
 from whisper.audio import SAMPLE_RATE
 from whisper.tokenizer import LANGUAGES
 
-model_size = "small"
-whisper_model = whisper.load_model(model_size)
-
-faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="float16")
-batched_model = BatchedInferencePipeline(model=faster_whisper_model)
-
 
 class ASREngine(str, Enum):
     whisper = 'whisper'
     faster_whisper = 'faster_whisper'
 
 
-engine = ASREngine.whisper
-# engine = ASREngine.faster_whisper
+# engine = ASREngine.whisper
+engine = ASREngine.faster_whisper
+
+model_sizes = ["base", "small", "medium", "turbo", "large"]
+whisper_models = {}
+faster_whisper_models = {}
+for size in model_sizes:
+    if engine == ASREngine.whisper:
+        whisper_models[size] = whisper.load_model(size)
+    else:
+        faster_whisper_models[size] = WhisperModel(size, device="cuda", compute_type="float16")
+
+whisper_model = whisper_models['small'] if engine == ASREngine.whisper else whisper.load_model('small')
 
 word_timestamps = True
+
+
+class DecodeConfig(BaseModel):
+    performance: str = 'fast'
+    limit: str = 'full'
+    task: str = 'transcribe'
+    prompt: str = ''
 
 
 class DecodeResult(BaseModel):
@@ -37,6 +49,7 @@ class DecodeResult(BaseModel):
     task: str = 'transcribe'
     duration: float
     decoded: bool = False
+    limited: bool = False
     decode_time: float | None = None
     tokens: int | None = None
     cost: float | None = None
@@ -45,8 +58,10 @@ class DecodeResult(BaseModel):
 
 class Media(BaseModel):
     id: str
+    type: str = 'video'
     filename: str
     path: str
+    url: str | None = None
     result: DecodeResult | None = None
 
 
@@ -54,6 +69,13 @@ def generate_id() -> str:
     return (
         ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
     )
+
+
+def crop_audio(path):
+    # load audio and pad/trim it to fit 60 seconds
+    audio = whisper.load_audio(path)
+    audio = whisper.pad_or_trim(audio, 60 * SAMPLE_RATE)
+    return audio
 
 
 def preprocess(filename, path):
@@ -74,41 +96,53 @@ def preprocess(filename, path):
     return Media(id=generate_id(), filename=filename, path=path, result=result)
 
 
-def transcribe(media: Media):
-    # load audio and pad/trim it to fit 30 seconds
-    english = media.result.lang == 'en'
-    task = 'transcribe' if english else 'translate'
-    prompt = ''
+def transcribe(media: Media, config: DecodeConfig):
+    task = config.task
+    translate = task == 'translate'
+    performance = config.performance
+    limited = config.limit == 'head'
+    prompt = config.prompt
+    path = media.path
+
+    audio = crop_audio(path) if limited else whisper.load_audio(path)
+
+    if translate:
+        size = 'small' if performance == 'fast' else 'large' if performance == 'accurate' else 'medium'
+    else:
+        size = 'base' if performance == 'fast' else 'large' if performance == 'accurate' else 'turbo'
+
+    print(f'{'Translating' if translate else 'Transcribing'} {media.filename} with {engine} {size} model')
 
     start = time.time()
     if engine == ASREngine.faster_whisper:
-        segments, info = faster_whisper_model.transcribe(media.path,
-                                                         # language=lang,
-                                                         task=task,
-                                                         beam_size=5,
-                                                         # batch_size=8,
-                                                         word_timestamps=word_timestamps and english,
-                                                         vad_filter=True,
-                                                         initial_prompt=prompt
-                                                         )
+        segments, _ = faster_whisper_models[size].transcribe(audio,
+                                                             # language=lang,
+                                                             task=task,
+                                                             beam_size=5,
+                                                             # batch_size=8,
+                                                             word_timestamps=word_timestamps and not translate,
+                                                             vad_filter=True,
+                                                             initial_prompt=prompt
+                                                             )
         segments = list(segments)
         tokens = sum(len(segment.tokens) for segment in segments)
     else:
-        result = whisper_model.transcribe(media.path,
-                                          task=task,
-                                          # language=lang,
-                                          # no_speech_threshold=0.4,
-                                          # verbose=True,
-                                          word_timestamps=word_timestamps and english,
-                                          initial_prompt=prompt
-                                          )
+        result = whisper_models[size].transcribe(audio,
+                                                 task=task,
+                                                 # language=lang,
+                                                 # no_speech_threshold=0.4,
+                                                 # verbose=True,
+                                                 word_timestamps=word_timestamps and not translate,
+                                                 initial_prompt=prompt
+                                                 )
         segments = result['segments']
-        info = None
         tokens = sum(len(segment['tokens']) for segment in segments)
     end = time.time()
     cost = tokens * 6 / 1_000_000
-    media.result = DecodeResult(segments=segments, info=info, language=LANGUAGES[media.result.lang].title(),
-                                duration=media.result.duration, task=task, decoded=True,
-                                tokens=tokens, cost=cost, estimated_cost=media.result.estimated_cost,
+    media.result = DecodeResult(segments=segments, language=LANGUAGES[media.result.lang].title(),
+                                duration=media.result.duration, task=task,
+                                decoded=True, limited=limited,
+                                tokens=tokens, cost=cost,
+                                estimated_cost=60 * 0.006 if limited else media.result.estimated_cost,
                                 decode_time=end - start)
     return media
