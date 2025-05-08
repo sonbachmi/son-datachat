@@ -1,4 +1,4 @@
-import {TranscribeResult} from '../models/whisper.ts'
+import {TranscribeResult} from '../models/asr.ts'
 
 const offset = 0
 

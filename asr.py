@@ -1,3 +1,5 @@
+import random
+import string
 import time
 from enum import Enum
 from typing import List
@@ -34,16 +36,25 @@ class DecodeResult(BaseModel):
     info: TranscriptionInfo | None = None
     task: str = 'transcribe'
     duration: float
-    decode: bool = False
+    decoded: bool = False
     decode_time: float | None = None
     tokens: int | None = None
     cost: float | None = None
     estimated_cost: float | None = None
 
+
 class Media(BaseModel):
+    id: str
     filename: str
     path: str
     result: DecodeResult | None = None
+
+
+def generate_id() -> str:
+    return (
+        ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
+    )
+
 
 def preprocess(filename, path):
     # load audio and pad/trim it to fit 30 seconds
@@ -58,14 +69,14 @@ def preprocess(filename, path):
     _, probs = whisper_model.detect_language(mel)
     lang = max(probs, key=probs.get)
     lang = str(lang)
-    estimated_cost = duration * 0.006
-    result = DecodeResult(lang=lang, duration=duration, estimated_cost=estimated_cost)
-    return Media(filename=filename, path=path, result=result)
+    result = DecodeResult(lang=lang, language=LANGUAGES[lang].title(),
+                          duration=duration, estimated_cost=duration * 0.006)
+    return Media(id=generate_id(), filename=filename, path=path, result=result)
 
 
 def transcribe(media: Media):
     # load audio and pad/trim it to fit 30 seconds
-    english = media.lang == 'en'
+    english = media.result.lang == 'en'
     task = 'transcribe' if english else 'translate'
     prompt = ''
 
@@ -96,9 +107,8 @@ def transcribe(media: Media):
         tokens = sum(len(segment['tokens']) for segment in segments)
     end = time.time()
     cost = tokens * 6 / 1_000_000
-    cost = round(cost, 0 if cost > 5 else 2)
-    media.result = DecodeResult(segments=segments, info=info, language=LANGUAGES[media.lang].title(),
-                        duration=round(media.result.duration), task=task,
-                        tokens=tokens, cost=cost, estimated_cost=estimated_cost,
-                        decode_time=round(end - start))
-    return media.result
+    media.result = DecodeResult(segments=segments, info=info, language=LANGUAGES[media.result.lang].title(),
+                                duration=media.result.duration, task=task, decoded=True,
+                                tokens=tokens, cost=cost, estimated_cost=media.result.estimated_cost,
+                                decode_time=end - start)
+    return media

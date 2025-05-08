@@ -19,6 +19,11 @@
             font-size: 1.3em;
             font-weight: bold;
             line-height: 1;
+            .unit {
+                font-weight: normal;
+                font-size: .8em;
+                font-variant: all-small-caps;
+            }
         }
 
         .diff {

@@ -11,6 +11,7 @@ export interface FetchOptions {
     params?: {
         [name: string]: string | number
     }
+    body?: object
 }
 
 // interface ApiErrorResponse {
@@ -104,12 +105,13 @@ export function useFetch(path: string, data?: object | FormData, options?: Fetch
         }
         setError(null)
         setFetching(true)
-        return fetch(url.toString(), data == null ?
+        const body = data || _options?.body
+        return fetch(url.toString(), body == null ?
             {method: 'GET'}
             : {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: data instanceof FormData ? data : JSON.stringify(data)
+                body: body instanceof FormData ? body : JSON.stringify(body)
             }).then(jsonOrError).then(json => {
             setValue(json)
             return json

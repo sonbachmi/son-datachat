@@ -120,6 +120,7 @@ class UploadResponse(BaseModel):
 
 
 class MediaUploadResponse(BaseModel):
+    type: str
     url: str
     result: DecodeResult
 
@@ -143,6 +144,7 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                     status_code=400, detail='Input file must be datasheet or media'
                 )
             if extension not in ['csv', 'xlsx']:
+                type = 'audio' if extension in ['wav', 'mp3'] else 'video'
                 out_filename = generate_filename(extension)
                 out_path = f'{root_path}/media/{out_filename}'
                 with open(out_path, "wb+") as out_file:
@@ -154,7 +156,7 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                 # if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
                 #     result.info.vad_options.max_speech_duration_s = 0
                 return MediaUploadResponse(
-                    url=public_url, result=media.result)
+                    type=type, url=public_url, result=media.result)
             df = (
                 pd.read_csv(file.file)
                 if extension == 'csv'
@@ -192,18 +194,12 @@ class QueryResponse(BaseModel):
     type: str
     html: bool
 
-
-class TranscribeResponse(BaseModel):
-    result: object
-
-
 def generate_filename(extension: str) -> str:
     return (
             ''.join(random.choices(string.ascii_lowercase + string.digits, k=24))
             + '.'
             + extension
     )
-
 
 def render_image(path):
     """Internal function to render image output from LLM as HTML img tag using the mounted URL."""
@@ -226,12 +222,15 @@ def render_answer(answer) -> (str, str):
     return str(answer), 'text'
 
 
-@api.get('/transcribe')
-async def get_transcribe() -> TranscribeResponse:
-    session = new_session()
+class TranscribeResponse(BaseModel):
+    result: object
+
+@api.post('/transcribe')
+async def get_transcribe(token: str) -> TranscribeResponse:
+    session = get_session(token)
     try:
-        result = session.get_transcribe_response()
-        return TranscribeResponse(result=result)
+        media = session.get_transcribe_response()
+        return TranscribeResponse(result=media.result)
     except (ValueError, Exception) as e:
         print('Transcribe error', e)
         raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')

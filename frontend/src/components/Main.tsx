@@ -31,7 +31,7 @@ function Main() {
                     <Accordion.Control icon={iconData}>Data Source</Accordion.Control>
                     <Accordion.Panel>
                         <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
-                            <DataSource setSelection={setSelection}/>
+                            <DataSource selection={selection} setSelection={setSelection}/>
                         </ErrorBoundary>
                     </Accordion.Panel>
                 </Accordion.Item>

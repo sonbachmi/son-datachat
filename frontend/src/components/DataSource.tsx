@@ -1,16 +1,42 @@
-import {FC, FormEvent, useState} from 'react'
+import {ChangeEvent, FC, FormEvent, useState} from 'react'
 
-import {Alert, Button, Fieldset, FileInput, Loader, Notification, NumberInput, rem, Select, Stack} from '@mantine/core'
-import {IconExclamationCircle, IconFileCheck, IconFiles, IconInfoCircle} from '@tabler/icons-react'
+import {
+    Alert,
+    Button,
+    Fieldset,
+    FileInput,
+    Loader,
+    Notification,
+    NumberInput,
+    rem,
+    Select,
+    Stack,
+    Textarea
+} from '@mantine/core'
+import {
+    IconClockMinus,
+    IconExclamationCircle,
+    IconFileCheck,
+    IconFiles,
+    IconInfoCircle,
+    IconMessageDown,
+    IconMessageLanguage,
+    IconSettingsBolt
+} from '@tabler/icons-react'
 
 import {postFormData, useFetch} from '../hooks/fetch.ts'
 import {DataSelection} from '../models/selection.ts'
-import {TranscribeResult} from '../models/whisper.ts'
+import {TranscribeResult} from '../models/asr.ts'
 
 import './DataSource.css'
+import {capitalize} from '../hooks/utils.ts'
 
 const icon = <IconFiles style={{width: rem(28), height: rem(28)}} stroke={1.5}/>
 const iconFile = <IconFileCheck/>
+const iconPerformance = <IconSettingsBolt/>
+const iconLimit = <IconClockMinus/>
+const iconTranslation = <IconMessageLanguage/>
+const iconDescription = <IconMessageDown/>
 
 interface UploadedFile {
     value: string
@@ -22,12 +48,16 @@ interface UploadedFile {
 }
 
 interface Props {
+    selection: DataSelection | null
     setSelection: (selection: DataSelection | null) => void;
 }
 
-const DataSource: FC<Props> = ({setSelection}) => {
+const DataSource: FC<Props> = ({selection, setSelection}) => {
     const [files, setFiles] = useState<File[]>([])
     const [isMedia, setIsMedia] = useState(false)
+    const [mediaType, setMediaType] = useState('video')
+    const [language, setLanguage] = useState('en')
+    const [duration, setDuration] = useState<number | null>(null)
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
     const onFilesChange = (files: File[]) => {
@@ -65,6 +95,10 @@ const DataSource: FC<Props> = ({setSelection}) => {
             if (isMedia) {
                 console.log(data)
                 setIsMedia(true)
+                setMediaType(data.type)
+                setLanguage(data.result.lang)
+                setDuration(data.result.duration)
+                setDirty(true)
             }
             if (!isMedia && data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
@@ -87,6 +121,7 @@ const DataSource: FC<Props> = ({setSelection}) => {
                 const f = upFiles[0]
                 setSelection({
                     filename: f.label,
+                    type: data.type,
                     url: f.url,
                     result: f.result,
                     media: true
@@ -139,6 +174,62 @@ const DataSource: FC<Props> = ({setSelection}) => {
         })
     }
 
+    const performanceLevels = [
+        'Fast', 'Balanced', 'Accurate'
+    ]
+    const [level, setLevel] = useState<string | null>('Fast')
+    const onLevelChange = (value: string | null) => {
+        if (value != null) {
+            setDirty(true)
+            setLevel(value)
+        }
+    }
+
+    const durationLimits = [
+        'Transcribe full duration', 'Transcribe only first 1 minute'
+    ]
+    const [limit, setLimit] = useState<string | null>(durationLimits[duration >= 61 ? 1 : 0])
+    const onLimitChange = (value: string | null) => {
+        if (value != null) {
+            setDirty(true)
+            setLimit(value)
+        }
+    }
+    const translationOptions = [
+        'Transcribe original language', 'Auto translate to English'
+    ]
+    const [translation, setTranslation] = useState<string | null>(translationOptions[0])
+    const onTranslationChange = (value: string | null) => {
+        if (value != null) {
+            setDirty(true)
+            setTranslation(value)
+        }
+    }
+    const [description, setDescription] = useState('')
+    const onDescriptionChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+        setDescription(e.target.value)
+        setDirty(true)
+    }
+
+    const [, fetchingTranscribe, errorTranscribe, doFetchTranscribe] = useFetch('/transcribe')
+    const transcribe = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        doFetchTranscribe({
+            body: {
+                performance: level.toLowerCase(),
+                limit: durationLimits.indexOf(limit) === 0 ? 'full' : 'head',
+                task: translationOptions.indexOf(translation) === 0 ? 'transcribe' : 'translate',
+                prompt: description
+            }
+        }).then((data) => {
+            console.log(data)
+            setSelection({
+                ...selection, ...{result: data.result}, ...{url: data.url}
+            })
+            setDirty(!!errorTranscribe)
+        })
+    }
+
 
     return (
         <div className="DataSource">
@@ -160,10 +251,54 @@ const DataSource: FC<Props> = ({setSelection}) => {
                 </Stack>
             </Fieldset>
             {isMedia ?
-                <Fieldset legend="Data Detection" className="fieldset">
-                    <Alert variant="light" color="blue" title="Media detected" icon={<IconInfoCircle/>}>
-                        Configure your preferences before transcribing media
+                <Fieldset legend="Media Detection" className="fieldset">
+                    <Alert variant="light" color="blue" title={capitalize(mediaType) + ' detected'}
+                           icon={<IconInfoCircle/>}>
+                        Configure your preferences before transcribing {mediaType}
                     </Alert>
+                    <div className="media-prefs">
+                        <form onSubmit={transcribe}>
+                            <Stack>
+                                <Select size="md"
+                                        label="Performance"
+                                        description="Set your priority between speed and accuracy"
+                                        leftSection={iconPerformance} checkIconPosition="left"
+                                        data={performanceLevels} value={level} onChange={onLevelChange}/>
+                                {duration >= 61 &&
+                                <Select size="md"
+                                        label="Limit"
+                                        description="Transcribe partially to save time for long media"
+                                        leftSection={iconLimit} checkIconPosition="left"
+                                        data={durationLimits} value={limit} onChange={onLimitChange}/>}
+                                {language !== 'en' && <Select size="md"
+                                                              label="Translation"
+                                                              description="Detected language not English, whether to translate"
+                                                              leftSection={iconTranslation} checkIconPosition="left"
+                                                              data={translationOptions} value={translation}
+                                                              onChange={onTranslationChange}/>}
+
+                                <Textarea
+                                    label="Description"
+                                    placeholder="Enter optional keywords, correct spellings, describe context for more accurate transcription"
+                                    minRows={3}
+                                    mt="md"
+                                    radius="md"
+                                    className=""
+                                    value={description}
+                                    onChange={onDescriptionChange}
+                                />
+                                <Button type="submit" disabled={!dirty}>Transcribe</Button>
+
+                                {fetchingTranscribe && <Loader color="blue"/>}
+                                {errorTranscribe &&
+                                    <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
+                                                  color="orange" mt="md">
+                                        There was a problem submitting
+                                        request: {errorTranscribe.message}</Notification>}
+                            </Stack>
+                        </form>
+                    </div>
+
                 </Fieldset> :
                 <Fieldset legend="Data Selector" className="fieldset">
                     {!uploadedFiles.length ?

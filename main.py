@@ -114,7 +114,7 @@ class Session:
         self.datasets: list[pd.DataFrame] = []
         self.df = None
         self.agent = None
-        self.current_media = None
+        self.current_media: Media | None = None
 
     def get_config(self):
         return {
@@ -172,11 +172,11 @@ class Session:
         )
 
     def get_preprocess_response(self, filename, path):
-        current_media = preprocess(filename, path)
-        return current_media
+        self.current_media = preprocess(filename, path)
+        return self.current_media
 
-    def get_transcribe_response(self, filename, path):
-        return transcribe(filename, path)
+    def get_transcribe_response(self):
+        return transcribe(self.current_media)
 
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled

@@ -6,6 +6,14 @@
     .fieldset {
         width: 45%;
     }
+
+    .media-prefs {
+        margin-top: 1em;
+
+        .mantine-Textarea-root {
+            margin-top: 0 !important;
+        }
+    }
 }
 
 @media (max-width:1080px) {

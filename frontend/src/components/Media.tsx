@@ -1,17 +1,7 @@
-import {useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {Alert, Group, Paper, SimpleGrid, Stack, Text} from '@mantine/core'
-import {IconClock, IconInfoCircle, IconLanguage, IconReceipt2, IconTimeDurationOff} from '@tabler/icons-react'
-import {
-    MediaEndedEvent,
-    MediaPlayer,
-    MediaPlayerInstance,
-    type MediaPlayEvent,
-    type MediaPlayRequestEvent,
-    MediaProvider,
-    MediaStartedEvent,
-    MediaTimeUpdateEvent,
-    MediaTimeUpdateEventDetail
-} from '@vidstack/react';
+import {IconClock, IconClockHour4, IconInfoCircle, IconLanguage, IconReceipt2} from '@tabler/icons-react'
+import {MediaPlayer, MediaPlayerInstance, MediaProvider, MediaStartedEvent} from '@vidstack/react';
 import {DefaultAudioLayout, defaultLayoutIcons, DefaultVideoLayout} from '@vidstack/react/player/layouts/default';
 
 import '@vidstack/react/player/styles/default/theme.css';
@@ -21,23 +11,24 @@ import './Media.css'
 
 import {DataSelection} from '../models/selection.ts'
 import {getTextAtTime} from '../hooks/transcribe.ts'
+import {capitalize, querySelectorDefer} from '../hooks/utils.ts'
 
 function Media({selection}: { selection: DataSelection | null }) {
     const player = useRef<MediaPlayerInstance>(null)
     const subtitle = useRef<HTMLDivElement>(null)
-    const isAudio = /\.(wav|mp3)$/i.test(selection?.filename)
-    const type = isAudio ? 'Audio' : 'Video'
     const [started, setStarted] = useState(false)
 
     const result = selection?.result
+    const {type = 'video'} = selection
+    const duration = result.limited ? 60 : result.duration
     const stats =
         {
             language: result.language,
-            duration: result.duration.toFixed(0) + 's',
-            decodeTime: result.decode_time?.toFixed(0) + 's',
-            speed: (result.decode_time / result.duration * 100),
-            diff: ((result.duration - result.decode_time) / result.duration * 100),
-            estimatedCost: 'USD ' + Intl.NumberFormat().format(result.estimated_cost),
+            duration: result.duration.toFixed(0),
+            decodeTime: result.decode_time?.toFixed(0),
+            speed: (result.decode_time / duration * 100),
+            diff: ((duration - result.decode_time) / duration * 100),
+            estimatedCost: Intl.NumberFormat().format(+result.estimated_cost.toFixed(2)),
         }
     const translate = result.task === 'translate'
 
@@ -45,54 +36,40 @@ function Media({selection}: { selection: DataSelection | null }) {
     //     return player.current?.subscribe(({started}) => {
     //         if (started) {
     //             setStarted(true)
-    //             const media = document.querySelector(isAudio ? 'audio' : 'video')
-    //             media.addEventListener('timeupdate', () => {
-    //                 const currentText = getTextAtTime(media.currentTime, selection?.result)
-    //                 // if (currentText !== text) {
-    //                 //     setText(currentText)
-    //                 // }
-    //                 if (subtitle.current)
-    //                     subtitle.current.textContent = currentText
+    //             querySelectorDefer(type).then((media: HTMLMediaElement) => {
+    //                 media.addEventListener('timeupdate', () => {
+    //                     const currentText = getTextAtTime(media.currentTime, selection?.result)
+    //                     // if (currentText !== text) {
+    //                     //     setText(currentText)
+    //                     // }
+    //                     if (subtitle.current)
+    //                         subtitle.current.textContent = currentText
+    //                 })
     //             })
     //         }
     //     })
-    // }, [player, selection?.result])
+    // }, [selection?.result, type, player.current])
 
     function onStarted(nativeEvent: MediaStartedEvent) {
         setStarted(true)
-        const media = document.querySelector(isAudio ? 'audio' : 'video')
-        media.addEventListener('timeupdate', () => {
-            const currentText = getTextAtTime(media.currentTime, selection?.result)
-            // if (currentText !== text) {
-            //     setText(currentText)
-            // }
-            if (subtitle.current)
-                subtitle.current.textContent = currentText
+        querySelectorDefer(type).then((media: HTMLMediaElement) => {
+            media.addEventListener('timeupdate', () => {
+                if (!selection?.result.decoded) return
+                const currentText = getTextAtTime(media.currentTime, selection?.result)
+                // if (currentText !== text) {
+                //     setText(currentText)
+                // }
+                if (subtitle.current)
+                    subtitle.current.textContent = currentText
+            })
         })
-    }
-
-    function onEnded(nativeEvent: MediaEndedEvent) {
-        // setStarted(false)
-    }
-
-    function onTimeUpdate(detail: MediaTimeUpdateEventDetail, nativeEvent: MediaTimeUpdateEvent) {
-        // console.log(detail, nativeEvent)
-    }
-
-    // 1. request was made
-    function onPlayRequest(nativeEvent: MediaPlayRequestEvent) {
-        // console.log('playrequest', nativeEvent);
-    }
-
-    // 2. request succeeded
-    function onPlay(nativeEvent: MediaPlayEvent) {
-        // request events are attached to media events
-        // console.log('play', nativeEvent);
     }
 
     return <div className="Media">
         <Stack>
-            <Alert variant="light" color="blue" title={`${type} transcribed and subtitled`}
+            <Alert variant="light" color="blue"
+                   title={selection?.result.decoded ? `${capitalize(type)} transcribed and subtitled`
+                       : `${capitalize(type)} ready for transcription`}
                    icon={<IconInfoCircle/>}>
             </Alert>
             {result && <div className="stats">
@@ -121,10 +98,13 @@ function Media({selection}: { selection: DataSelection | null }) {
                         </Group>
 
                         <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{stats.duration}</Text>
+                            <Text className="value">{result.limited ? '60' : stats.duration} <span className="unit">seconds</span></Text>
+                            {result.limited && <Text c="teal" fz="sm" fw={500} className="diff">
+                                <span>/ {stats.duration}s</span>
+                            </Text>}
                         </Group>
                         <Text fz="xs" c="dimmed" mt={7}>
-                            Total media duration
+                            Transcribed duration {result.limited ? '(limited)' : ''}
                         </Text>
                     </Paper>
                     {result.decoded && <>
@@ -133,11 +113,11 @@ function Media({selection}: { selection: DataSelection | null }) {
                                 <Text size="xs" c="dimmed" className="title">
                                     Processing Time
                                 </Text>
-                                <IconTimeDurationOff className="icon" size={22} stroke={1.5}/>
+                                <IconClockHour4 className="icon" size={22} stroke={1.5}/>
                             </Group>
 
                             <Group align="flex-end" gap="xs" mt={25}>
-                                <Text className="value">{stats.decodeTime}</Text>
+                                <Text className="value">{stats.decodeTime} <span className="unit">seconds</span></Text>
                                 <Text c="teal" fz="sm" fw={500} className="diff">
                                     <span>{stats.speed.toFixed(0)}%</span>
                                 </Text>
@@ -178,7 +158,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                         </Group>
 
                         <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{stats.estimatedCost}</Text>
+                            <Text className="value"> <span className="unit">USD</span> {stats.estimatedCost}</Text>
                         </Group>
 
                         <Text fz="xs" c="dimmed" mt={7}>
@@ -189,9 +169,10 @@ function Media({selection}: { selection: DataSelection | null }) {
 
             </div>}
             <div className="player">
-                <MediaPlayer ref={player} title={`Transcribed ${type}`} src={selection?.url} crossOrigin={true}
-                             onStarted={onStarted} onEnded={onEnded} onPlay={onPlay} onMediaPlayRequest={onPlayRequest}
-                             onTimeUpdate={onTimeUpdate}>
+                <MediaPlayer ref={player}
+                             title={result.decoded ? `Transcribed ${capitalize(type)}` : `Source ${capitalize(type)}`}
+                             src={selection?.url} crossOrigin={true}
+                             onStarted={onStarted}>
                     <MediaProvider/>
                     <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
                     <DefaultVideoLayout icons={defaultLayoutIcons}/>
