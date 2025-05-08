@@ -33,8 +33,8 @@ function Media({selection}: { selection: DataSelection | null }) {
     const stats =
         {
             language: result.language,
-            duration: result.duration + 's',
-            decodeTime: result.decode_time + 's',
+            duration: result.duration.toFixed(0) + 's',
+            decodeTime: result.decode_time?.toFixed(0) + 's',
             speed: (result.decode_time / result.duration * 100),
             diff: ((result.duration - result.decode_time) / result.duration * 100),
             estimatedCost: 'USD ' + Intl.NumberFormat().format(result.estimated_cost),
@@ -168,23 +168,23 @@ function Media({selection}: { selection: DataSelection | null }) {
                                 Compared to duration
                             </Text>
                         </Paper>
-                        <Paper withBorder p="md" radius="md" key={stats.estimatedCost} className="stat">
-                            <Group justify="space-between">
-                                <Text size="xs" c="dimmed" className="title">
-                                    Estimated Cost
-                                </Text>
-                                <IconReceipt2 className="icon" size={22} stroke={1.5}/>
-                            </Group>
-
-                            <Group align="flex-end" gap="xs" mt={25}>
-                                <Text className="value">{stats.estimatedCost}</Text>
-                            </Group>
-
-                            <Text fz="xs" c="dimmed" mt={7}>
-                                Per OpenAI standard rate
-                            </Text>
-                        </Paper>
                     </>}
+                    <Paper withBorder p="md" radius="md" key={stats.estimatedCost} className="stat">
+                        <Group justify="space-between">
+                            <Text size="xs" c="dimmed" className="title">
+                                Estimated Cost
+                            </Text>
+                            <IconReceipt2 className="icon" size={22} stroke={1.5}/>
+                        </Group>
+
+                        <Group align="flex-end" gap="xs" mt={25}>
+                            <Text className="value">{stats.estimatedCost}</Text>
+                        </Group>
+
+                        <Text fz="xs" c="dimmed" mt={7}>
+                            Per OpenAI standard rate
+                        </Text>
+                    </Paper>
                 </SimpleGrid>
 
             </div>}

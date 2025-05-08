@@ -6,10 +6,10 @@ import whisper
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 from faster_whisper.transcribe import Segment, TranscriptionInfo
 from pydantic import BaseModel
-from whisper.audio import N_SAMPLES, SAMPLE_RATE
+from whisper.audio import SAMPLE_RATE
 from whisper.tokenizer import LANGUAGES
 
-model_size = "medium"
+model_size = "small"
 whisper_model = whisper.load_model(model_size)
 
 faster_whisper_model = WhisperModel(model_size, device="cuda", compute_type="float16")
@@ -28,7 +28,7 @@ word_timestamps = True
 
 
 class DecodeResult(BaseModel):
-    segments: List[Segment | dict] = []
+    segments: List[Segment | dict] | None = None
     lang: str = 'en'
     language: str = 'English'
     info: TranscriptionInfo | None = None
@@ -58,7 +58,8 @@ def preprocess(filename, path):
     _, probs = whisper_model.detect_language(mel)
     lang = max(probs, key=probs.get)
     lang = str(lang)
-    result = DecodeResult(lang=lang, duration=round(duration))
+    estimated_cost = duration * 0.006
+    result = DecodeResult(lang=lang, duration=duration, estimated_cost=estimated_cost)
     return Media(filename=filename, path=path, result=result)
 
 
@@ -96,8 +97,6 @@ def transcribe(media: Media):
     end = time.time()
     cost = tokens * 6 / 1_000_000
     cost = round(cost, 0 if cost > 5 else 2)
-    estimated_cost = media.result.duration * 0.006
-    estimated_cost = round(estimated_cost, 0 if estimated_cost > 5 else 2)
     media.result = DecodeResult(segments=segments, info=info, language=LANGUAGES[media.lang].title(),
                         duration=round(media.result.duration), task=task,
                         tokens=tokens, cost=cost, estimated_cost=estimated_cost,
