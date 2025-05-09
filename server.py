@@ -20,18 +20,20 @@ from asr import DecodeResult, DecodeConfig
 from main import create_session, new_session, get_session_by_token, Session, ModelName
 
 root_path = os.path.dirname(os.path.realpath(__file__))
+# root_path = os.path.abspath(os.path.dirname(__file__))
 
-env = os.environ.get('DATACHAT_ENV','development')
+env = os.environ.get('DATACHAT_ENV', 'development')
 production = env == 'production'
 if production:
     print('Running in production mode')
 
-load_dotenv(dotenv_path= ".env.production" if production else None, verbose=True)
+load_dotenv(dotenv_path=os.path.join(root_path, ".env.production") if production else None, override=True)
 
-# SERVER_URL = os.environ.get('SERVER_URL')
-SERVER_URL = 'https://dcapi.sonnguyen.online' if production else 'http://localhost:8000'
-# FRONTEND_URL = os.environ.get('FRONTEND_URL')
-FRONTEND_URL = 'https://datachat.sonnguyen.online' if production else 'http://localhost:5173'
+SERVER_URL = os.environ.get('SERVER_URL')
+FRONTEND_URL = os.environ.get('FRONTEND_URL')
+
+# SERVER_URL = 'https://dcapi.sonnguyen.online' if production else 'http://localhost:8000'
+# FRONTEND_URL = 'https://datachat.sonnguyen.online' if production else 'http://localhost:5173'
 
 api = FastAPI()
 
@@ -54,6 +56,7 @@ api.mount(
 )
 
 require_session = True
+
 
 # @api.middleware("http")
 # async def middleware(request: Request, call_next):
@@ -129,8 +132,10 @@ class MediaUploadResponse(BaseModel):
     url: str
     result: DecodeResult
 
+
 class MediaDecodeResponse(BaseModel):
     result: DecodeResult
+
 
 @api.post('/data/input')
 async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | MediaUploadResponse:
@@ -177,6 +182,7 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
 class TranscribeResponse(BaseModel):
     result: object
 
+
 @api.post('/transcribe')
 async def get_transcribe(token: str, config: DecodeConfig) -> TranscribeResponse:
     print(config)
@@ -212,6 +218,7 @@ class QueryResponse(BaseModel):
     answer: str
     type: str
     html: bool
+
 
 def render_image(path):
     """Internal function to render image output from LLM as HTML img tag using the mounted URL."""
