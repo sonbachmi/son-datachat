@@ -7,7 +7,18 @@ const __dirname = fileURLToPath(new URL('./', import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        {
+            name: "markdown-loader",
+            transform(code, id) {
+                if (id.slice(-3) === ".md") {
+                    // For .md files, get the raw content
+                    return `export default ${JSON.stringify(code)};`;
+                }
+            }
+        }
+    ],
     resolve: {
         alias: [
             {find: '@', replacement: resolve(__dirname, 'src')},

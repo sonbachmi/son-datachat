@@ -1,7 +1,7 @@
 import {useState} from 'react'
-import {Accordion} from '@mantine/core'
-import {IconDatabaseExport, IconPlayerPlayFilled, IconMessageChatbot} from '@tabler/icons-react'
 import {ErrorBoundary} from 'react-error-boundary'
+import {Accordion} from '@mantine/core'
+import {IconDatabaseExport, IconInfoCircle, IconMessageChatbot, IconPlayerPlayFilled} from '@tabler/icons-react'
 
 import {useSession} from '../hooks/fetch.ts'
 import {logError} from '../hooks/error.ts'
@@ -13,7 +13,9 @@ import ErrorFallback from './ErrorFallback.tsx'
 
 import './Main.css'
 import Media from './Media.tsx'
+import About from './About.tsx'
 
+const iconAbout = <IconInfoCircle/>
 const iconData = <IconDatabaseExport/>
 const iconMedia = <IconPlayerPlayFilled/>
 const iconChat = <IconMessageChatbot/>
@@ -29,6 +31,14 @@ function Main() {
     return (
         <div className="Main">
             <Accordion multiple defaultValue={['datasource', 'conversation', 'media']}>
+                <Accordion.Item key="about" value="about">
+                    <Accordion.Control icon={iconAbout}>
+                        About
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                        <About/>
+                    </Accordion.Panel>
+                </Accordion.Item>
                 <Accordion.Item key="datasource" value="datasource">
                     <Accordion.Control icon={iconData}>Data Source</Accordion.Control>
                     <Accordion.Panel>

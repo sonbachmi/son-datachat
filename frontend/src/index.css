@@ -13,6 +13,7 @@
   -moz-osx-font-smoothing: grayscale;
 
   --color-primary: #d89c76;
+  --color-faded: #fae3d9;
 }
 
 @supports not selector(::-webkit-scrollbar) {
