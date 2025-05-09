@@ -35,6 +35,15 @@ from the transcript.
 You can configure the transcription by tuning preset performance levels, balancing between speed and accuracy.
 For long media, you can choose to transcribe partially to save time, useful for testing.
 
+Pay attention to the description, which will be served as an additional prompt to the AI model. This allows
+you to provide context to help the AI understand more about the speech. Another common use is providing corrections of
+spelling errors of terms that the AI is not familiar with, especially in faster levels.
+For example, in the first run the transcript contains incorrect guesses of words and acronyms
+specific to the domain of your data. Then in subsequent runs you should help fix those
+by listing your corrections in the description (just a list of words usually suffices). 
+The AI is then informed and knows where and how to correct the errors. This is a more cost-effective
+way to improve accuracy than raising the performance level to Accurate, which may cost too much time.
+
 DataChat also provides information about the media and the transcription process that, among other things, helps you 
 estimate the time and cost the operation may incur to forecast them for a real use case, before making decisions about processing real data.
 
