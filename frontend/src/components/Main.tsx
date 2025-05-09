@@ -1,7 +1,13 @@
 import {useState} from 'react'
 import {ErrorBoundary} from 'react-error-boundary'
 import {Accordion} from '@mantine/core'
-import {IconDatabaseExport, IconInfoCircle, IconMessageChatbot, IconPlayerPlayFilled} from '@tabler/icons-react'
+import {
+    IconBadgeCcFilled,
+    IconDatabaseExport,
+    IconInfoCircle,
+    IconMessageChatbot,
+    IconPhotoVideo
+} from '@tabler/icons-react'
 
 import {useSession} from '../hooks/fetch.ts'
 import {logError} from '../hooks/error.ts'
@@ -17,7 +23,8 @@ import About from './About.tsx'
 
 const iconAbout = <IconInfoCircle/>
 const iconData = <IconDatabaseExport/>
-const iconMedia = <IconPlayerPlayFilled/>
+const iconMedia = <IconPhotoVideo/>
+const iconMediaTranscribed = <IconBadgeCcFilled/>
 const iconChat = <IconMessageChatbot/>
 
 
@@ -27,6 +34,8 @@ function Main() {
     const [showMedia, setShowMedia] = useState(false)
     const [isMedia, setIsMedia] = useState(false)
     const [selection, setSelection] = useState<DataSelection | null>(null)
+
+    const decoded = !!selection?.result.decoded
 
     return (
         <div className="Main">
@@ -60,8 +69,8 @@ function Main() {
                 }
                 {isMedia && selection?.media && (
                     <Accordion.Item key="media" value="media">
-                        <Accordion.Control icon={iconMedia}>
-                            Media {!selection?.result.decoded ? 'Preview' : 'Transcription Result'}
+                        <Accordion.Control icon={decoded ? iconMediaTranscribed : iconMedia}>
+                            Media {!decoded ? 'Preview' : 'Transcription Result'}
                         </Accordion.Control>
                         <Accordion.Panel>
                             <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>

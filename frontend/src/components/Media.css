@@ -1,24 +1,10 @@
 .Media {
-    .subtitle {
-        min-height: 5em;
-        padding: .5em 1em;
-        text-align: center;
-        background: black;
-        color: yellow;
-        font-size: 1.5em;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: -.5em;
-        border-radius: .25em;
-    }
-
     .stats {
         .value {
             font-size: 1.3em;
             font-weight: bold;
             line-height: 1;
+
             .unit {
                 font-weight: normal;
                 font-size: .8em;
@@ -46,5 +32,27 @@
                 border-left: 3px solid light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
             }
         }
+    }
+
+    .player {
+        .vds-time {
+            white-space: nowrap;
+        }
+
+        .subtitle {
+            min-height: 5em;
+            padding: .5em 1em;
+            text-align: center;
+            background: black;
+            color: yellow;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -.5em;
+            border-radius: .25em;
+        }
+
     }
 }
