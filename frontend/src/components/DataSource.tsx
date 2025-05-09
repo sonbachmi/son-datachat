@@ -50,17 +50,21 @@ interface UploadedFile {
 interface Props {
     selection: DataSelection | null
     setSelection: (selection: DataSelection | null) => void;
+    isMedia: boolean
+    setIsMedia: (is: boolean) => void;
+    setShowMedia: (shown: boolean) => void;
 }
 
-const DataSource: FC<Props> = ({selection, setSelection}) => {
+const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, setShowMedia}) => {
     const [files, setFiles] = useState<File[]>([])
-    const [isMedia, setIsMedia] = useState(false)
     const [mediaType, setMediaType] = useState('video')
     const [language, setLanguage] = useState('en')
     const [duration, setDuration] = useState<number | null>(null)
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const verb = files.length && uploadedFiles.length ? 'Replace' : 'Upload'
     const onFilesChange = (files: File[]) => {
+        setIsMedia(files.some(f => !/csv|xlsx?/i.test(f.name)))
+        setShowMedia(false)
         setFiles(files)
         setUploadedFiles([])
         setSelection(null)
@@ -99,6 +103,7 @@ const DataSource: FC<Props> = ({selection, setSelection}) => {
                 setLanguage(data.result.lang)
                 setDuration(data.result.duration)
                 setDirty(true)
+                setShowMedia(true)
             }
             if (!isMedia && data.rows.length !== files.length)
                 return Promise.reject(new Error('Upload files out of sync'))
@@ -252,52 +257,59 @@ const DataSource: FC<Props> = ({selection, setSelection}) => {
             </Fieldset>
             {isMedia ?
                 <Fieldset legend="Media Detection" className="fieldset">
-                    <Alert variant="light" color="blue" title={capitalize(mediaType) + ' detected'}
-                           icon={<IconInfoCircle/>}>
-                        Configure your preferences before transcribing {mediaType}
-                    </Alert>
-                    <div className="media-prefs">
-                        <form onSubmit={transcribe}>
-                            <Stack>
-                                <Select size="md"
-                                        label="Performance"
-                                        description="Set your priority between speed and accuracy"
-                                        leftSection={iconPerformance} checkIconPosition="left"
-                                        data={performanceLevels} value={level} onChange={onLevelChange}/>
-                                {duration >= 61 &&
-                                <Select size="md"
-                                        label="Limit Duration"
-                                        description="Transcribe partially to save time for long media"
-                                        leftSection={iconLimit} checkIconPosition="left"
-                                        data={durationLimits} value={limit} onChange={onLimitChange}/>}
-                                {language !== 'en' && <Select size="md"
-                                                              label="Translation"
-                                                              description="Detected language not English, whether to translate"
-                                                              leftSection={iconTranslation} checkIconPosition="left"
-                                                              data={translationOptions} value={translation}
-                                                              onChange={onTranslationChange}/>}
+                    {!uploadedFiles.length ?
+                        <Alert variant="light" color="orange" title="Media file detected" icon={<IconInfoCircle/>}>
+                            Please upload media for transcription
+                        </Alert>
+                        : <>
+                            <Alert variant="light" color="blue" title={capitalize(mediaType) + ' detected'}
+                                   icon={<IconInfoCircle/>}>
+                                Configure your preferences before transcribing {mediaType}
+                            </Alert>
+                            <div className="media-prefs">
+                                <form onSubmit={transcribe}>
+                                    <Stack>
+                                        <Select size="md"
+                                                label="Performance"
+                                                description="Set your priority between speed and accuracy"
+                                                leftSection={iconPerformance} checkIconPosition="left"
+                                                data={performanceLevels} value={level} onChange={onLevelChange}/>
+                                        {duration >= 61 &&
+                                            <Select size="md"
+                                                    label="Limit Duration"
+                                                    description="Transcribe partially to save time for long media"
+                                                    leftSection={iconLimit} checkIconPosition="left"
+                                                    data={durationLimits} value={limit} onChange={onLimitChange}/>}
+                                        {language !== 'en' && <Select size="md"
+                                                                      label="Translation"
+                                                                      description="Detected language not English, whether to translate"
+                                                                      leftSection={iconTranslation}
+                                                                      checkIconPosition="left"
+                                                                      data={translationOptions} value={translation}
+                                                                      onChange={onTranslationChange}/>}
 
-                                <Textarea
-                                    label="Description"
-                                    placeholder="Enter optional keywords, correct spellings, describe context for more accurate transcription"
-                                    minRows={3}
-                                    mt="md"
-                                    radius="md"
-                                    className=""
-                                    value={description}
-                                    onChange={onDescriptionChange}
-                                />
-                                <Button type="submit" disabled={!dirty}>Transcribe</Button>
+                                        <Textarea
+                                            label="Description"
+                                            placeholder="Enter optional keywords, correct spellings, describe context for more accurate transcription"
+                                            minRows={3}
+                                            mt="md"
+                                            radius="md"
+                                            className=""
+                                            value={description}
+                                            onChange={onDescriptionChange}
+                                        />
+                                        <Button type="submit" disabled={!dirty}>Transcribe</Button>
 
-                                {fetchingTranscribe && <Loader color="blue"/>}
-                                {errorTranscribe &&
-                                    <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
-                                                  color="orange" mt="md">
-                                        There was a problem submitting
-                                        request: {errorTranscribe.message}</Notification>}
-                            </Stack>
-                        </form>
-                    </div>
+                                        {fetchingTranscribe && <Loader color="blue"/>}
+                                        {errorTranscribe &&
+                                            <Notification icon={<IconExclamationCircle/>} withCloseButton={false}
+                                                          color="orange" mt="md">
+                                                There was a problem submitting
+                                                request: {errorTranscribe.message}</Notification>}
+                                    </Stack>
+                                </form>
+                            </div>
+                        </>}
 
                 </Fieldset> :
                 <Fieldset legend="Data Selector" className="fieldset">

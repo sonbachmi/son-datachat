@@ -22,6 +22,8 @@ const iconChat = <IconMessageChatbot/>
 function Main() {
     /*const session = */
     useSession()
+    const [showMedia, setShowMedia] = useState(false)
+    const [isMedia, setIsMedia] = useState(false)
     const [selection, setSelection] = useState<DataSelection | null>(null)
 
     return (
@@ -31,11 +33,12 @@ function Main() {
                     <Accordion.Control icon={iconData}>Data Source</Accordion.Control>
                     <Accordion.Panel>
                         <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
-                            <DataSource selection={selection} setSelection={setSelection}/>
+                            <DataSource selection={selection} setSelection={setSelection}
+                                        isMedia={isMedia} setIsMedia={setIsMedia} setShowMedia={setShowMedia}/>
                         </ErrorBoundary>
                     </Accordion.Panel>
                 </Accordion.Item>
-                {!selection?.media &&
+                {!isMedia &&
                     <Accordion.Item key="conversation" value="conversation">
                         <Accordion.Control icon={iconChat}>Conversation</Accordion.Control>
                         <Accordion.Panel>
@@ -45,12 +48,14 @@ function Main() {
                         </Accordion.Panel>
                     </Accordion.Item>
                 }
-                {selection?.media && (
+                {isMedia && selection?.media && (
                     <Accordion.Item key="media" value="media">
-                        <Accordion.Control icon={iconMedia}>Media</Accordion.Control>
+                        <Accordion.Control icon={iconMedia}>
+                            Media {!selection?.result.decoded ? 'Preview' : 'Transcription Result'}
+                        </Accordion.Control>
                         <Accordion.Panel>
                             <ErrorBoundary FallbackComponent={ErrorFallback} onError={logError}>
-                                <Media selection={selection}/>
+                                <Media selection={selection} showMedia={showMedia}/>
                             </ErrorBoundary>
                         </Accordion.Panel>
                     </Accordion.Item>

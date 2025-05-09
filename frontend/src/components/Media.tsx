@@ -13,7 +13,7 @@ import {DataSelection} from '../models/selection.ts'
 import {getTextAtTime} from '../hooks/transcribe.ts'
 import {capitalize, querySelectorDefer} from '../hooks/utils.ts'
 
-function Media({selection}: { selection: DataSelection | null }) {
+function Media({selection, showMedia}: { selection: DataSelection | null, showMedia: boolean }) {
     const player = useRef<MediaPlayerInstance>(null)
     const subtitle = useRef<HTMLDivElement>(null)
     const [started, setStarted] = useState(false)
@@ -168,6 +168,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                 </SimpleGrid>
 
             </div>}
+            {showMedia &&
             <div className="player">
                 <MediaPlayer ref={player}
                              title={result.decoded ? `Transcribed ${capitalize(type)}` : `Source ${capitalize(type)}`}
@@ -183,6 +184,7 @@ function Media({selection}: { selection: DataSelection | null }) {
                     </div>
                 }
             </div>
+            }
         </Stack>
     </div>
 }
