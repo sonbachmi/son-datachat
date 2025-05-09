@@ -68,8 +68,8 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
     return <div className="Media">
         <Stack>
             <Alert variant="light" color="blue"
-                   title={selection?.result.decoded ? `${capitalize(type)} transcribed and subtitled`
-                       : `${capitalize(type)} ready for transcription`}
+                   title={selection?.result.decoded ? `${capitalize(type)} transcribed and subtitled` :
+                       showMedia ? `${capitalize(type)} ready for transcription` : `${capitalize(type)} transcription in progress...`}
                    icon={<IconInfoCircle/>}>
             </Alert>
             {result && <div className="stats">

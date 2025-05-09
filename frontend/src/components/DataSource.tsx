@@ -219,6 +219,7 @@ const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, se
     const [, fetchingTranscribe, errorTranscribe, doFetchTranscribe] = useFetch('/transcribe')
     const transcribe = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setShowMedia(false)
         doFetchTranscribe({
             body: {
                 performance: level.toLowerCase(),
@@ -231,6 +232,7 @@ const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, se
             setSelection({
                 ...selection, ...{result: data.result}
             })
+            setShowMedia(true)
             setDirty(!!errorTranscribe)
         })
     }
