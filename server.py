@@ -32,9 +32,6 @@ load_dotenv(dotenv_path=os.path.join(root_path, ".env.production") if production
 SERVER_URL = os.environ.get('SERVER_URL')
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
 
-# SERVER_URL = 'https://dcapi.sonnguyen.online' if production else 'http://localhost:8000'
-# FRONTEND_URL = 'https://datachat.sonnguyen.online' if production else 'http://localhost:5173'
-
 api = FastAPI()
 
 # CORS required for cross-domain client connection

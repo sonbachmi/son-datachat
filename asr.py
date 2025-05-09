@@ -5,7 +5,7 @@ from enum import Enum
 from typing import List
 
 import whisper
-from faster_whisper import WhisperModel, BatchedInferencePipeline
+from faster_whisper import WhisperModel
 from faster_whisper.transcribe import Segment, TranscriptionInfo
 from pydantic import BaseModel
 from whisper.audio import SAMPLE_RATE
@@ -29,7 +29,8 @@ for size in model_sizes:
     else:
         faster_whisper_models[size] = WhisperModel(size, device="cuda", compute_type="float16")
 
-whisper_model = whisper_models['small'] if engine == ASREngine.whisper else whisper.load_model('small')
+preprocess_model_size = 'base'
+whisper_model = whisper_models[preprocess_model_size] if engine == ASREngine.whisper else whisper.load_model(preprocess_model_size)
 
 word_timestamps = True
 
