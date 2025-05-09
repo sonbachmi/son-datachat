@@ -20,7 +20,7 @@ class ASREngine(str, Enum):
 # engine = ASREngine.whisper
 engine = ASREngine.faster_whisper
 
-model_sizes = ["base", "small", "medium", "turbo", "large"]
+model_sizes = ["tiny", "base", "small", "medium", "turbo", "large"]
 whisper_models = {}
 faster_whisper_models = {}
 for size in model_sizes:
@@ -110,9 +110,9 @@ def transcribe(media: Media, config: DecodeConfig):
     audio = crop_audio(path) if limited else whisper.load_audio(path)
 
     if translate:
-        size = 'small' if performance == 'fast' else 'large' if performance == 'accurate' else 'medium'
+        size = 'base' if performance == 'fastest' else 'small' if performance == 'fast' else 'large' if performance == 'accurate' else 'medium'
     else:
-        size = 'base' if performance == 'fast' else 'large' if performance == 'accurate' else 'turbo'
+        size = 'tiny' if performance == 'fastest' else 'base' if performance == 'fast' else 'large' if performance == 'accurate' else 'turbo'
 
     print(f'{'Translating' if translate else 'Transcribing'} {media.filename} with {engine} {size} model')
 

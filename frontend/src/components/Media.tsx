@@ -105,7 +105,7 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
                             </Text>}
                         </Group>
                         <Text fz="xs" c="dimmed" mt={7}>
-                            Transcribed duration {result.limited ? '(limited)' : ''}
+                            {result.limited ? 'Limited duration' : 'Full duration'}
                         </Text>
                     </Paper>
                     {result.decoded && <>

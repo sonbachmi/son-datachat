@@ -180,7 +180,7 @@ const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, se
     }
 
     const performanceLevels = [
-        'Fast', 'Balanced', 'Accurate'
+        'Fastest', 'Fast', 'Balanced', 'Accurate'
     ]
     const [level, setLevel] = useState<string | null>('Fast')
     const onLevelChange = (value: string | null) => {
@@ -278,8 +278,8 @@ const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, se
                                                 data={performanceLevels} value={level} onChange={onLevelChange}/>
                                         {duration >= 61 &&
                                             <Select size="md"
-                                                    label="Limit Duration"
-                                                    description="Transcribe partially to save time for long media"
+                                                    label="Coverage"
+                                                    description="Limit duration to transcribe"
                                                     leftSection={iconLimit} checkIconPosition="left"
                                                     data={durationLimits} value={limit} onChange={onLimitChange}/>}
                                         {language !== 'en' && <Select size="md"
