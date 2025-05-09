@@ -103,6 +103,8 @@ def transcribe(media: Media, config: DecodeConfig):
     performance = config.performance
     limited = config.limit == 'head'
     prompt = config.prompt
+    duration = media.result.duration
+    lang = media.result.lang
     path = media.path
 
     audio = crop_audio(path) if limited else whisper.load_audio(path)
@@ -140,8 +142,8 @@ def transcribe(media: Media, config: DecodeConfig):
         tokens = sum(len(segment['tokens']) for segment in segments)
     end = time.time()
     cost = tokens * 6 / 1_000_000
-    media.result = DecodeResult(segments=segments, language=LANGUAGES[media.result.lang].title(),
-                                duration=media.result.duration, task=task,
+    media.result = DecodeResult(segments=segments, lang=lang, language=LANGUAGES[lang].title(),
+                                duration=duration, task=task,
                                 decoded=True, limited=limited,
                                 tokens=tokens, cost=cost,
                                 estimated_cost=60 * 0.006 if limited else media.result.estimated_cost,

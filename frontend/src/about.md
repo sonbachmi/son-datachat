@@ -50,7 +50,8 @@ estimate the time and cost the operation may incur to forecast them for a real u
 For testing, try some short media files (recommended just a few minutes) and/or use a faster level
 as it may take a long time to transcribe long durations.
 For a quick preview, you can use this [1-minute sample video](/sprite-flight-1m.mp4) and try tweaking 
-different preferences to get a sense of how this feature performs.
+different preferences to get a sense of how this feature performs. 
+For translation, try this [French speech sample audio](/french.mp3).
 
 ### Technical Specs
 - Backend: Python processing engine using Nvidia GPU computing power

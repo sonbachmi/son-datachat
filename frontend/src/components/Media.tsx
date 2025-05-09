@@ -28,7 +28,8 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
             decodeTime: result.decode_time?.toFixed(0),
             speed: (result.decode_time / duration * 100),
             diff: ((duration - result.decode_time) / duration * 100),
-            estimatedCost: Intl.NumberFormat().format(+result.estimated_cost.toFixed(2)),
+            estimatedCost: Intl.NumberFormat('en-US',
+                { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(result.estimated_cost),
         }
     const translate = result.task === 'translate'
 
