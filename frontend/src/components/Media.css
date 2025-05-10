@@ -55,4 +55,12 @@
         }
 
     }
+    .srt {
+        display: flex;
+        justify-content: center;
+        padding: 1em;
+        a {
+
+        }
+    }
 }

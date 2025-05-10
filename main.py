@@ -179,6 +179,9 @@ class Session:
     def get_transcribe_response(self, config: DecodeConfig):
         return self.current_media.transcribe(config)
 
+    def get_srt(self):
+        return self.current_media.export_srt()
+
     """
         Data Analysis
     """

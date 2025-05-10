@@ -3,7 +3,7 @@ import {useErrorBoundary} from 'react-error-boundary'
 
 import {Session} from '../models/session.ts'
 
-const apiUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'
+export const apiUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8000'
 
 let session: Session | null = null
 
@@ -18,6 +18,15 @@ export interface FetchOptions {
 //     detail: string
 // }
 
+
+export function getServerUrl(path: string) {
+    const url = new URL(apiUrl + path)
+    if (session) {
+        url.searchParams.append('token', session.token)
+    }
+    return url.toString()
+}
+
 function handleError(error: Error) {
     // console.error(error)
     return Promise.reject(error instanceof TypeError ? new TypeError('Cannot connect to server') : error)
@@ -30,7 +39,7 @@ function jsonOrError(response: Response) {
     }
     return response.json()
         .then((json) => {
-            if (!response.ok && 'detail' in json) {
+            if (!response.ok || 'detail' in json) {
                 const detail = (typeof json.detail === 'string' ? json.detail : JSON.stringify(json.detail))
                 return Promise.reject(new Error('API error: ' + detail))
             }

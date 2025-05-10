@@ -1,6 +1,6 @@
-import {useEffect, useRef, useState} from 'react'
-import {Alert, Group, Paper, SimpleGrid, Stack, Text} from '@mantine/core'
-import {IconClock, IconClockHour4, IconInfoCircle, IconLanguage, IconReceipt2} from '@tabler/icons-react'
+import {useRef, useState} from 'react'
+import {Alert, Button, Group, Paper, SimpleGrid, Stack, Text} from '@mantine/core'
+import {IconClock, IconClockHour4, IconDownload, IconInfoCircle, IconLanguage, IconReceipt2} from '@tabler/icons-react'
 import {MediaPlayer, MediaPlayerInstance, MediaProvider, MediaStartedEvent} from '@vidstack/react';
 import {DefaultAudioLayout, defaultLayoutIcons, DefaultVideoLayout} from '@vidstack/react/player/layouts/default';
 
@@ -12,6 +12,7 @@ import './Media.css'
 import {DataSelection} from '../models/selection.ts'
 import {getTextAtTime} from '../hooks/transcribe.ts'
 import {capitalize, querySelectorDefer} from '../hooks/utils.ts'
+import {getServerUrl} from '../hooks/fetch.ts';
 
 function Media({selection, showMedia}: { selection: DataSelection | null, showMedia: boolean }) {
     const player = useRef<MediaPlayerInstance>(null)
@@ -29,7 +30,7 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
             speed: (result.decode_time / duration * 100),
             diff: ((duration - result.decode_time) / duration * 100),
             estimatedCost: Intl.NumberFormat('en-US',
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(result.estimated_cost),
+                {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(result.estimated_cost),
         }
     const translate = result.task === 'translate'
 
@@ -99,7 +100,8 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
                         </Group>
 
                         <Group align="flex-end" gap="xs" mt={25}>
-                            <Text className="value">{result.limited ? '60' : stats.duration} <span className="unit">secs</span></Text>
+                            <Text className="value">{result.limited ? '60' : stats.duration} <span
+                                className="unit">secs</span></Text>
                             {result.limited && <Text c="teal" fz="sm" fw={500} className="diff">
                                 <span>/ {stats.duration}s</span>
                             </Text>}
@@ -170,24 +172,37 @@ function Media({selection, showMedia}: { selection: DataSelection | null, showMe
 
             </div>}
             {showMedia &&
-            <div className="player">
-                <MediaPlayer ref={player}
-                             title={result.decoded ? `Transcribed ${capitalize(type)}` : `Source ${capitalize(type)}`}
-                             src={selection?.url} crossOrigin={true}
-                             onStarted={onStarted}>
-                    <MediaProvider/>
-                    <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
-                    <DefaultVideoLayout icons={defaultLayoutIcons}/>
-                </MediaPlayer>
-                {result.decoded && started &&
-                    <div className="subtitle" ref={subtitle}>
-                        {/*{text}*/}
-                    </div>
-                }
-            </div>
+                <div className="player">
+                    <MediaPlayer ref={player}
+                                 title={result.decoded ? `Transcribed ${capitalize(type)}` : `Source ${capitalize(type)}`}
+                                 src={selection?.url} crossOrigin={true}
+                                 onStarted={onStarted}>
+                        <MediaProvider/>
+                        <DefaultAudioLayout colorScheme="dark" icons={defaultLayoutIcons}/>
+                        <DefaultVideoLayout icons={defaultLayoutIcons}/>
+                    </MediaPlayer>
+                    {result.decoded && started &&
+                        <div className="subtitle" ref={subtitle}>
+                            {/*{text}*/}
+                        </div>
+                    }
+                    {result.decoded &&
+                        <div className="srt">
+                        <Button
+                            component="a"
+                            download
+                            href={`${getServerUrl('/srt')}`}
+                            rightSection={<IconDownload size={14} />}
+                            // onClick={(event) => event.preventDefault()}
+                        >
+                            Download SRT file
+                        </Button>
+                        </div>
             }
-        </Stack>
     </div>
+}
+</Stack>
+</div>
 }
 
 export default Media

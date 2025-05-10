@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import textwrap
 import time
 from enum import Enum
 from typing import List
@@ -144,6 +145,8 @@ class Media:
             segments = result['segments']
             tokens = sum(len(segment['tokens']) for segment in segments)
         end = time.time()
+        for segment in segments:
+            segment.text = segment.text.strip()
         cost = tokens * 6 / 1_000_000
         self.result = DecodeResult(segments=segments, lang=lang, language=LANGUAGES[lang].title(),
                                    duration=duration, task=task,
@@ -152,3 +155,25 @@ class Media:
                                    estimated_cost=60 * 0.006 if limited else self.result.estimated_cost,
                                    decode_time=end - start)
         return self
+
+    def export_srt(self):
+        def repr_srt_time(seconds):
+            m, s = divmod(seconds, 60)
+            h, m = divmod(m, 60)
+            ms = round(s % 1000)
+            h = round(h)
+            m = round(m)
+            s = round(s)
+            return f'{h:02d}:{m:02d}:{s:02d},{ms:03d}'
+
+        segments = self.result.segments
+        srt = ''
+        for i, segment in enumerate(segments):
+            srt += textwrap.dedent(f'''\
+                                    {i + 1}
+                                    {repr_srt_time(segment.start)} --> {repr_srt_time(segment.end)}
+                                    {segment.text.strip()}
+                                    
+                                    ''')
+        filename = self.filename.split('.')[0] + '.srt'
+        return srt, filename

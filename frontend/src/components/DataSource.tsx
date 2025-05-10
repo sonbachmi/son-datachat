@@ -14,7 +14,8 @@ import {
     Textarea
 } from '@mantine/core'
 import {
-    IconClockMinus,
+    IconBadgeCc,
+    IconClockMinus, IconDownload,
     IconExclamationCircle,
     IconFileCheck,
     IconFiles,
@@ -300,7 +301,7 @@ const DataSource: FC<Props> = ({selection, setSelection, isMedia, setIsMedia, se
                                             value={description}
                                             onChange={onDescriptionChange}
                                         />
-                                        <Button type="submit" disabled={!dirty}>Transcribe</Button>
+                                        <Button type="submit" disabled={!dirty} leftSection={<IconBadgeCc />}>Transcribe</Button>
 
                                         {fetchingTranscribe && <Loader color="blue"/>}
                                         {errorTranscribe &&

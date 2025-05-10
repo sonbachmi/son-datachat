@@ -3,18 +3,22 @@ FastAPI app to serve public REST API to connect frontend clients to the core LLM
 
 Usage: run with uvicorn, sharing SERVER_URL in .env for clients to use
 """
+import codecs
 import os
 import random
 import re
 import string
+import traceback
 from pathlib import Path
 
+from pydantic import BaseModel
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, HTTPException
+
+from fastapi import FastAPI, Response, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from fastapi.responses import FileResponse
 
 from asr import DecodeResult, DecodeConfig
 from main import create_session, new_session, get_session_by_token, Session, ModelName
@@ -175,20 +179,41 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
         raise HTTPException(status_code=500, detail=repr(e))
 
 
+def repr_error(e: Exception):
+    return str(e) if not production else traceback.format_exc()
+
+
 class TranscribeResponse(BaseModel):
     result: object
 
 
 @api.post('/transcribe')
 async def get_transcribe(token: str, config: DecodeConfig) -> TranscribeResponse:
-    print(config)
     session = get_session(token)
+    print(config)
     try:
         media = session.get_transcribe_response(config)
         return TranscribeResponse(result=media.result)
     except (ValueError, Exception) as e:
-        print('Transcribe error', e)
-        raise HTTPException(status_code=500, detail=f'System error: {repr(e)}')
+        print('Transcribe error', traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f'{repr_error(e)}')
+
+
+@api.get("/srt")
+async def download_srt(token: str):
+    session = get_session(token)
+    try:
+        srt, filename = session.get_srt()
+        # out_filename = generate_filename('srt')
+        # out_path = f'{root_path}/media/{filename}'
+        # with codecs.open(out_path, "w", "utf-8") as f:
+        #     f.write(srt)
+        return Response(srt, media_type='text/plain', headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        })
+    except (ValueError, Exception) as e:
+        print('Download error', traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f'{repr_error(e)}')
 
 
 class SetDataResponse(BaseModel):

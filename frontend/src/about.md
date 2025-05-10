@@ -30,7 +30,8 @@ DataChat uses OpenAI speech-to-text API to find speech in the content and detect
 then transcribes the speech to text, either in the original language or automatically translating to English
 (DataChat only displays the translation option when a foreign language is detected).
 Then DataChat allows you to play back the media with closed captions (subtitles) generated
-from the transcript.
+from the transcript. For later use, you can download the transcript in SRT format to load in 
+a media player or add to your content production workflow.
 
 You can configure the transcription by tuning preset performance levels, balancing between speed and accuracy.
 For long media, you can choose to transcribe partially to save time, useful for testing.
@@ -50,7 +51,8 @@ estimate the time and cost the operation may incur to forecast them for a real u
 For testing, try some short media files (recommended just a few minutes) and/or use a faster level
 as it may take a long time to transcribe long durations.
 For a quick preview, you can use this [1-minute sample video](/sprite-flight-1m.mp4) and try tweaking 
-different preferences to get a sense of how this feature performs. 
+different preferences to get a sense of how this feature performs (which vary depending on the content;
+for this video the recommended starting level is Balanced). 
 For translation, try this [French speech sample audio](/french.mp3).
 
 ### Technical Specs
