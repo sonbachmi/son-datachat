@@ -156,8 +156,7 @@ async def upload_files(files: list[UploadFile], token: str) -> UploadResponse | 
                 with open(out_path, "wb+") as out_file:
                     # shutil.copyfileobj(file.file, out_file)
                     out_file.write(file.file.read())
-                media = session.get_preprocess_response(file.filename, out_path)
-                # result = session.get_transcribe_response(file.filename, out_path)
+                media = session.add_media(file.filename, out_path)
                 # if result.info is not None and math.isinf(result.info.vad_options.max_speech_duration_s):
                 #     result.info.vad_options.max_speech_duration_s = 0
                 return MediaUploadResponse(

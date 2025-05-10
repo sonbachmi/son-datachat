@@ -18,7 +18,7 @@ from pandasai import Agent
 from pandasai.llm import OpenAI, BambooLLM
 from pandasai.responses.streamlit_response import StreamlitResponse
 
-from asr import transcribe, Media, preprocess, DecodeConfig
+from asr import DecodeConfig, Media
 
 load_dotenv()
 
@@ -172,16 +172,16 @@ class Session:
             memory_size=10,
         )
 
-    def get_preprocess_response(self, filename, path):
-        extension = os.path.splitext(filename)[1][1:].lower()
-        media = preprocess(filename, path)
-        media.type = 'audio' if extension in ['wav', 'mp3'] else 'video'
-        self.current_media = media
-        return media
+    def add_media(self, filename, path):
+        self.current_media = Media(filename, path)
+        return self.current_media
 
     def get_transcribe_response(self, config: DecodeConfig):
-        media = self.current_media
-        return transcribe(media, config)
+        return self.current_media.transcribe(config)
+
+    """
+        Data Analysis
+    """
 
     def get_chat_response(self, query: str):
         """ Query LLM engine with the prompt, applying security layer if enabled
