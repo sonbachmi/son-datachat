@@ -2,17 +2,20 @@
 ### AI-powered application for data analysis and ASR
 #### Designed and built by Son Nguyen me@sonnguyen.online
 
-This application employs modern AI technologies to implement two features: 
+This project employs modern AI technologies to implement and showcase two features of great potential use: 
 
 ## Interactive Data Analysis
 
 When you upload a datasheet file in CSV or Excel format that contains tabular data of any kind and shape,
-DataChat uses OpenAI (with help from the Pandas AI library) to analyze the data for understanding.
+DataChat uses OpenAI (with help from the _Pandas AI_ library) to parse the data for analysis.
 Then you can start a conversation, asking everything about the data using natural English just like with a GPT chatbot.
-DataChat can provide answers relevant to the data with facts, insights and calculations that may help you 
+DataChat can provide answers relevant to the data with reasonings, insights and calculations that may help you 
 filter and query any aspects of the data and examine them. 
 DataChat can also help you visualize the data by drawing tables and charts representing any range and subset of data 
 and their relations, in any criteria.
+Actually, DataChat serves as a minimal version of what _LlamaIndex_ calls a _knowledge assistant_, but purely homemade.
+I built this project from the ground up this way as part of an early research on how to implement a human-LLM interface
+for data analysis using the knowledge and experience I was assimilating.
 
 Some typical questions you can ask:
 
@@ -26,7 +29,7 @@ Some typical questions you can ask:
 ## Automatic Speech Recognition
 
 When you upload a media file that contains content of either audio or video in common formats, 
-DataChat uses OpenAI speech-to-text API to find speech in the content and detect the spoken language. It
+DataChat uses _OpenAI_ speech-to-text API to find speech in the content and detect the spoken language. It
 then transcribes the speech to text, either in the original language or automatically translating to English
 (DataChat only displays the translation option when a foreign language is detected).
 Then DataChat allows you to play back the media with closed captions (subtitles) generated
@@ -57,5 +60,5 @@ For translation, try this [French speech sample audio](/french.mp3).
 
 ### Technical Specs
 - Backend: Python processing engine using Nvidia GPU computing power
-- API server: Fastapi
-- Frontend: React application
+- API server: _FastAPI_
+- Frontend: _React_ application
