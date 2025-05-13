@@ -35,7 +35,7 @@ function Main() {
     const [isMedia, setIsMedia] = useState(false)
     const [selection, setSelection] = useState<DataSelection | null>(null)
 
-    const decoded = !!selection?.result.decoded
+    const decoded = !!selection?.result?.decoded
 
     return (
         <div className="Main">
