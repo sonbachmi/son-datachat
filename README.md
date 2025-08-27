@@ -1,7 +1,6 @@
 # Son's Data Chat App
-### Solution to technical challenge from Cyber Sierra
-#### Author: Son Nguyen <son@bachmi.com>, Senior Fullstack Engineer applicant
-
+### AI powered data analysis chatbot
+#### Author: Son Nguyen <sonnhjamy@gmail.com>
 
 ## Data Chat Engine
 
